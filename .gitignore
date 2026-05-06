@@ -1,0 +1,15 @@
+# ── 项目级忽略（backend/ 细节由 backend/.gitignore 负责）──
+
+# 开发工作流文件
+prompt.txt
+
+# Claude Code 本机配置
+.claude/
+
+# 前端构建产物
+node_modules/
+dist/
+
+# Windows 系统文件
+Thumbs.db
+Desktop.ini

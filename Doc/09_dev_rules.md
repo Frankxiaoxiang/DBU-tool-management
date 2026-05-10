@@ -11,7 +11,9 @@
 ### 后端 #1：配置与环境
 
 - **必须**：使用 `python-dotenv` 加载 `.env.development` / `.env.production` / `.env.example` 三套配置；`config.py` 不硬编码任何密码或密钥。
+- **必须**：`load_dotenv()` 在 `app/__init__.py` **模块顶层**执行，且**早于** `from config import CONFIG_MAP`（Config 类体在 import 阶段已读取 `os.environ`，延迟到 `create_app()` 内部会让 Config 永远拿到 `None` 且无报错日志，极难调试）。
 - **禁止**：将 `.env.*` 提交到 git；在代码里直接 `os.environ['DATABASE_URL']` 之外的方式硬编码连接串。
+- **禁止**：在 `create_app()` 函数内部首次调用 `load_dotenv()`。
 
 ### 后端 #2：禁止物理删除核心表
 
@@ -41,7 +43,9 @@
 ### 后端 #7：乐观锁仅手动校验
 
 - **必须**：所有写操作请求体含 `version` 字段；Service 层手动比对 `record.version != request_version` 失败抛 `ConflictError(409)`；提交前手动 `record.version += 1`；全局 `@errorhandler(StaleDataError)` 兜底返回 409。
+- **必须**：`StaleDataError` 导入路径为 `from sqlalchemy.orm.exc import StaleDataError`（SQLAlchemy 2.x）。
 - **禁止**：在任何 Model 上加 `__mapper_args__ = {'version_id_col': version}`（V1.1/V1.2/V1.3 错误设计已纠偏）；用 `body.get('version')` 静默接受 None。
+- **禁止**：写成 `from sqlalchemy.exc import StaleDataError`（2.x 已移除该路径，会 `ImportError`，errorhandler 注册失败，乐观锁冲突变成 500 且无报错日志）。
 
 ### 后端 #8：邮件告警事务隔离
 
@@ -61,6 +65,7 @@
 ### 后端 #11：连接池参数
 
 - **必须**：`SQLALCHEMY_ENGINE_OPTIONS` 配 `pool_pre_ping=True`、`pool_recycle=3600`、`pool_size=10`、`max_overflow=20`；连接串含 `?charset=utf8mb4`；`init_command="SET time_zone='+08:00'"`。
+- **必须**：多对多关联表 `db.Table('xxx', ...)` 显式传 `mysql_charset='utf8mb4'` + `mysql_collate='utf8mb4_unicode_ci'`（关联表不走 Model 的 `__table_args__`，生产 MySQL server 默认非 utf8mb4 时会建出错误 charset 的表）。
 - **禁止**：使用默认连接池配置（MySQL `wait_timeout=28800` 后连接假死）；忽略 charset 设置（中文乱码）。
 
 ---
@@ -144,6 +149,7 @@ rules: {
 | CSS 类 | kebab-case | `status-badge` |
 | 代码注释 | 英文 | `# Calculate planned arrival date` |
 | 业务术语注释 | 中文 | `# 治具入库后绑定库位` |
+| 自定义异常类 | PascalCase + `Error` 后缀，**不与 Python 内置异常名冲突** | ✅ `ConflictError` / `ForbiddenError` / `ValidationError` / `NotFoundError`；❌ `PermissionError` / `ValueError` / `TypeError` / `NotImplementedError` |
 
 ---
 
@@ -170,6 +176,10 @@ rules: {
 - [ ] Blueprint 是否未在定义和注册时双重设置 prefix？
 - [ ] JWT identity 是否强转 int？
 - [ ] PUT/PATCH 是否用 `'key' in body` 判断而非 `body.get()`？
+- [ ] `app/__init__.py` 顶层是否已 `load_dotenv(...)` 且**早于** `from config import CONFIG_MAP`？
+- [ ] 多对多关联表 `db.Table(...)` 是否显式传 `mysql_charset='utf8mb4'` + `mysql_collate='utf8mb4_unicode_ci'`？
+- [ ] `StaleDataError` 导入路径是否为 `from sqlalchemy.orm.exc`（而非 `sqlalchemy.exc`）？
+- [ ] 自定义异常类是否避开 Python 内置异常名（`grep -RIn "class PermissionError\|class ValueError\|class TypeError\|class NotImplementedError"` 应无匹配）？
 
 ### 前端
 
@@ -192,3 +202,11 @@ rules: {
 - **导出三档** → [Doc/07_export_guideline.md](./07_export_guideline.md)
 - **权限矩阵** → [Doc/05_permissions.md](./05_permissions.md)
 - **API 规约** → [Doc/04_api_spec.md](./04_api_spec.md)
+
+---
+
+## 六、修订记录
+
+| 日期 | 内容 | 操作人 |
+|------|------|--------|
+| 2026-05-10 | Phase 0.5 落位：① 路径修正（全文 `docs/` 显示文本统一为 `Doc/` 共 7 处）；② 内容对齐 CLAUDE.md 2026-04-29 修订——后端 #1 补 dotenv 顺序、#7 补 `StaleDataError` 2.x 路径、#11 补 `db.Table()` 关联表 charset、命名约定表新增"自定义异常类"行、Checklist 后端段新增 4 项核对 | Claude |

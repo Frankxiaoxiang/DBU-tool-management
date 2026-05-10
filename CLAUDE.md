@@ -434,3 +434,4 @@ db.session.commit()
 | 日期 | 内容 | 操作人 |
 |------|------|--------|
 | 2026-04-29 | 基于 Phase 0.3 实施反馈补入：§e.1 dotenv 加载顺序铁律、§d Rule 1 关联表 charset 子条、§e.5 StaleDataError 导入路径补充、§h 异常命名陷阱新增行 | Frank |
+| 2026-05-10 | Phase 0.5 落位：① Doc/09_dev_rules.md 内 7 处 `docs/` 显示文本修正为 `Doc/`；② Doc/09_dev_rules.md 同步本表 2026-04-29 写入的 4 条 Phase 0.3 实战教训（后端 #1 dotenv 顺序、#7 StaleDataError 2.x 路径、#11 关联表 charset、命名约定表"自定义异常类"行）+ Checklist 后端段新增 4 项 | Claude |

@@ -20,7 +20,7 @@
 
 ### 0.1 开发机环境（ThinkPad Windows 11）
 
-- [ ] 安装 Python 3.12 并加入 PATH
+- [x] 安装 Python 3.12 并加入 PATH — 2026-05-10
 - [x] 安装 Docker Desktop（用于 MySQL 容器） — 2026-04-29
 - [x] 启动 Docker MySQL 8.4 容器（含 utf8mb4 + `+08:00` 时区） — 2026-04-29
   ```bash
@@ -33,10 +33,10 @@
     --collation-server=utf8mb4_unicode_ci \
     --default-time-zone='+08:00'
   ```
-- [ ] 安装 Node.js LTS + 启用 pnpm（`corepack enable`）
-- [ ] 安装 Git
-- [ ] 准备 .env.development 模板
-- [ ] 验证 Docker MySQL 可连接（`mysql -h 127.0.0.1 -uroot -p`）
+- [x] 安装 Node.js LTS + 启用 pnpm（`corepack enable`） — 2026-05-10
+- [x] 安装 Git — 2026-05-10
+- [x] 准备 .env.development 模板 — 2026-05-10
+- [x] 验证 Docker MySQL 可连接（`mysql -h 127.0.0.1 -uroot -p`） — 2026-05-10
 
 ### 0.2 生产机预演（公司 Windows Server）
 
@@ -85,13 +85,13 @@
 - [x] Cu VC 治具模板（8 项：SK、CC-YY、SJ、TH、DJ、QH、YTJ 等），合计 42 项模板 — 2026-05-02
 - [x] `flask seed` CLI 命令封装，支持反复执行（幂等）与 `--reset` 重置，外键冲突由 `FOREIGN_KEY_CHECKS=0/1` 处理 — 2026-05-02
 
-### 0.5 docs/09_dev_rules.md 落位
+### 0.5 Doc/09_dev_rules.md 落位
 
-- [ ] 后端禁律 11 条
-- [ ] 前端禁律 8 条
-- [ ] 命名约定
-- [ ] Code Review Checklist
-- [ ] 在 CLAUDE.md 中引用
+- [x] 后端禁律 11 条 — 2026-05-10
+- [x] 前端禁律 8 条 — 2026-05-10
+- [x] 命名约定 — 2026-05-10
+- [x] Code Review Checklist — 2026-05-10
+- [x] 在 CLAUDE.md 中引用 — 2026-05-10
 
 ### 0.6 前端 Vue 项目初始化
 
@@ -223,3 +223,5 @@
 | 2026-04-30 | 修复三项：user_roles 补 utf8mb4 charset（Migration d3b83cd57489）；auth_service.py 移至 app/services/；TASKS.md 补 JWT blocklist 未完成项 | Claude |
 | 2026-04-29 | CLAUDE.md §d / §e / §h 同步补入 4 条 Phase 0.3 实战教训（dotenv 顺序 / 关联表 charset / StaleDataError 路径 / 异常命名） | Frank |
 | 2026-05-02 | Phase 0.4 完成：Supplier + FixtureTemplate 两个 Model + Migration 24fbd93c72dc + seed_data.py（10 角色 / 12 状态 / 6 设备代号 / 11 供应商 / 42 治具模板）三步验收通过（首跑 / 幂等 / --reset） | Claude |
+| 2026-05-10 | Phase 0.5 完成：Doc/09_dev_rules.md 内容对齐 CLAUDE.md 2026-04-29 修订记录的 4 条 Phase 0.3 实战教训（后端 #1/#7/#11 子条 + 命名约定表"自定义异常类"行）+ Checklist 4 项 + 文末新增"六、修订记录"；路径修正 7 处显示文本 `docs/` → `Doc/`；CLAUDE.md §j 同步登记 | Claude |
+| 2026-05-10 | Phase 0.1 全部完成：Python 3.12 / Node.js LTS + pnpm / Git / .env.development 模板 / Docker MySQL 连接验证 | Frank |

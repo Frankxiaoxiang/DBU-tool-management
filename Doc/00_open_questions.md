@@ -9,7 +9,33 @@
 
 ## 当前未关闭问题
 
-（暂无）
+### Q-001：401 是否自动尝试 refresh_token？
+
+- **提出日期**：2026-05-10
+- **背景**：当前 MVP 实现：401 直接清除本地 token 并跳转 `/login`，不自动 refresh。
+- **影响范围**：`src/api/request.js` 响应拦截器；`src/api/auth.js` 的 `refresh()` 函数目前仅供手动调用。
+- **可选方案**：
+  - A. 保持现状：401 一刀切跳登录。优点：简单、无并发问题；缺点：access token 过期时用户被强制重新登录。
+  - B. Phase 1+ 升级：401 → 尝试用 refresh token 换新 access token → 成功则重放原请求 → 失败才跳登录。
+- **责任确认方**：Frank
+- **状态**：🟡 待确认
+- **确认结果**：
+- **关闭日期**：
+
+---
+
+### Q-002：localStorage key 命名约定
+
+- **提出日期**：2026-05-10
+- **背景**：当前新系统使用 `access_token` / `refresh_token` 作为 localStorage key。vc-cost-system 既有项目使用单一 `'token'` key（CLAUDE.md Rule 12 引用）。
+- **影响范围**：`src/utils/storage.js`（TOKEN_KEY / REFRESH_KEY 常量）；若修改需同步清理所有 localStorage 操作点。
+- **可选方案**：
+  - A. 保持 `access_token` / `refresh_token`：语义更准确，与 refresh 机制对称。
+  - B. 改回 `token`（单一 key）：减少认知负担，与 vc-cost-system 保持一致；但 refresh token 存放位置需另议。
+- **责任确认方**：Frank
+- **状态**：🟡 待确认
+- **确认结果**：
+- **关闭日期**：
 
 ---
 

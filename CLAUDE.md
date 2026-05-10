@@ -215,6 +215,12 @@ db.session.execute(text("SET FOREIGN_KEY_CHECKS = 1"))
 db.session.commit()
 ```
 
+### Rule 14：前端 ESLint 版本约束
+
+- **必须**：`eslint` 锁定 `8.x`，对应 `eslint-plugin-vue@9.x`（v10 要求 ESLint 9+ flat config，`.eslintrc.cjs` 格式下报 `plugin:vue/vue3-recommended` 找不到）
+- **必须**：prettier 集成用 `eslint-config-prettier`，在 `extends` 写 `'prettier'`（**不得**用 `@vue/eslint-config-prettier@10`，该版本为 flat config 格式，ESLint 8 下报 `Unexpected top-level property "name"`）
+- **必须**：`.eslintrc.cjs` 的 `overrides` 中对 `src/views/**/*.vue` 关闭 `vue/multi-word-component-names`（视图页面单词命名 Login / Layout / Home 是合理惯例）
+
 ---
 
 ## e. V1.4 专属规则（必须逐项遵守）
@@ -435,3 +441,4 @@ db.session.commit()
 |------|------|--------|
 | 2026-04-29 | 基于 Phase 0.3 实施反馈补入：§e.1 dotenv 加载顺序铁律、§d Rule 1 关联表 charset 子条、§e.5 StaleDataError 导入路径补充、§h 异常命名陷阱新增行 | Frank |
 | 2026-05-10 | Phase 0.5 落位：① Doc/09_dev_rules.md 内 7 处 `docs/` 显示文本修正为 `Doc/`；② Doc/09_dev_rules.md 同步本表 2026-04-29 写入的 4 条 Phase 0.3 实战教训（后端 #1 dotenv 顺序、#7 StaleDataError 2.x 路径、#11 关联表 charset、命名约定表"自定义异常类"行）+ Checklist 后端段新增 4 项 | Claude |
+| 2026-05-10 | Phase 0.6 实战补入 Rule 14：前端 ESLint 版本约束（eslint@8 + eslint-plugin-vue@9 + eslint-config-prettier；@vue/eslint-config-prettier@10 flat config 不兼容；views/ 目录关闭 multi-word-component-names） | Claude |

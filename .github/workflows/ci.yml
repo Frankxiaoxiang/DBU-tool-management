@@ -1,0 +1,69 @@
+name: DBU MVP CI
+
+on:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
+
+jobs:
+  frontend-check:
+    name: Frontend Lint & Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - name: Install Dependencies
+        run: |
+          cd frontend
+          pnpm install --frozen-lockfile
+
+      - name: Run ESLint
+        run: |
+          cd frontend
+          pnpm lint
+
+      - name: Dry Run Build
+        run: |
+          cd frontend
+          pnpm build
+
+  backend-check:
+    name: Backend Syntax & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Python Syntax Check
+        run: |
+          cd backend
+          python -m compileall -q .
+
+      # - name: Run Pytest
+      #   run: |
+      #     cd backend
+      #     pytest tests/
+      #   (TODO: 在 Phase 2 完善状态机单元测试后取消注释)

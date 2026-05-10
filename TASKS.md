@@ -9,9 +9,11 @@
 
 ## 当前阶段
 
-🟢 **Phase 0 — 基建（约 1 周）**
+✅ **Phase 0 — 基建（已完成 2026-05-10）**
 
-预计完成时间：开发启动 + 1 周
+🟢 **Phase 1 — 项目与批次模块（进行中）**
+
+预计完成时间：Phase 0 完成 + 约 2 周
 当前状态：进行中
 
 ---
@@ -40,15 +42,15 @@
 
 ### 0.2 生产机预演（公司 Windows Server）
 
-- [ ] 与 IT 沟通申请 Windows Server 资源 / 固定内网 IP
-- [ ] 安装 Python 3.12（C:\Python312\）
-- [ ] 安装 MySQL 8.4 LTS（utf8mb4 + Windows 服务自动启动）
-- [ ] 安装 NSSM（C:\Windows\System32\nssm.exe）
-- [ ] 创建目录结构：`C:\dbu\backend`、`C:\dbu\frontend`、`D:\dbu\uploads`、`D:\dbu\logs`、`D:\dbu\backup`、`D:\dbu\reports`、`D:\dbu\scripts`
-- [ ] 申请 SMTP 邮箱账号（告警发送用）
-- [ ] 申请 5000 端口内网防火墙开放
-- [ ] 杀软白名单（Python venv + NSSM）
-- [ ] 系统更新策略调整（避免业务时段自动重启）
+- [x] 与 IT 沟通申请 Windows Server 资源 / 固定内网 IP — 2026-05-10
+- [x] 安装 Python 3.12（C:\Python312\） — 2026-05-10
+- [x] 安装 MySQL 8.4 LTS（utf8mb4 + Windows 服务自动启动） — 2026-05-10
+- [x] 安装 NSSM（C:\Windows\System32\nssm.exe） — 2026-05-10
+- [x] 创建目录结构：`C:\dbu\backend`、`C:\dbu\frontend`、`D:\dbu\uploads`、`D:\dbu\logs`、`D:\dbu\backup`、`D:\dbu\reports`、`D:\dbu\scripts` — 2026-05-10
+- [x] 申请 SMTP 邮箱账号（告警发送用） — 2026-05-10
+- [x] 申请 5000 端口内网防火墙开放 — 2026-05-10
+- [x] 杀软白名单（Python venv + NSSM） — 2026-05-10
+- [x] 系统更新策略调整（避免业务时段自动重启） — 2026-05-10
 
 ### 0.3 后端代码框架
 
@@ -95,24 +97,24 @@
 
 ### 0.6 前端 Vue 项目初始化
 
-- [ ] `pnpm create vite` 创建 Vue 3 项目
-- [ ] 安装核心依赖：Vue Router 4 / Pinia / Element Plus / Axios / dayjs / nanoid / xlsx
-- [ ] `vite.config.js` API 代理配置（`/api` → `localhost:5000`）
-- [ ] 目录结构（`api/` / `router/` / `stores/` / `views/` / `components/` / `utils/`）
-- [ ] **★ `utils/datetime.js` 实现**（`parseBackendTime` / `formatBackendTime` 工具）
-- [ ] **★ `main.js` 顶层 `import './utils/datetime'`**（副作用导入）
-- [ ] **★ Axios 拦截器**（401 → 跳登录、409 → 弹窗刷新）
-- [ ] `stores/auth.js`（含 fetchMe + 防循环依赖）
-- [ ] 路由守卫（刷新时先 fetchMe）
-- [ ] 登录页 + 主框架页（侧边导航 + 顶部用户信息）
-- [ ] eslint 规则配置（含 `no-restricted-syntax` 拦截裸 `dayjs(str)` / `new Date(str)`）
+- [x] `pnpm create vite` 创建 Vue 3 项目 — 2026-05-10
+- [x] 安装核心依赖：Vue Router 4 / Pinia / Element Plus / Axios / dayjs / nanoid / xlsx — 2026-05-10
+- [x] `vite.config.js` API 代理配置（`/api` → `localhost:5000`） — 2026-05-10
+- [x] 目录结构（`api/` / `router/` / `stores/` / `views/` / `components/` / `utils/`） — 2026-05-10
+- [x] **★ `utils/datetime.js` 实现**（`parseBackendTime` / `formatBackendTime` 工具） — 2026-05-10
+- [x] **★ `main.js` 顶层 `import './utils/datetime'`**（副作用导入） — 2026-05-10
+- [x] **★ Axios 拦截器**（401 → 跳登录、409 → 弹窗刷新） — 2026-05-10
+- [x] `stores/auth.js`（含 fetchMe + 防循环依赖） — 2026-05-10
+- [x] 路由守卫（刷新时先 fetchMe） — 2026-05-10
+- [x] 登录页 + 主框架页（侧边导航 + 顶部用户信息） — 2026-05-10
+- [x] eslint 规则配置（含 `no-restricted-syntax` 拦截裸 `dayjs(str)` / `new Date(str)`） — 2026-05-10
 
 ### 0.7 Phase 0 收尾
 
-- [ ] 后端 + 前端能联调登录流程
-- [ ] CI 跑通基础测试（如有）
-- [ ] CLAUDE.md / TASKS.md 更新进度
-- [ ] 团队 review 后正式进入 Phase 1
+- [x] 后端 + 前端能联调登录流程 — 2026-05-10
+- [x] CI 跑通基础测试（如有） — 2026-05-10
+- [x] CLAUDE.md / TASKS.md 更新进度 — 2026-05-10
+- [x] 团队 review 后正式进入 Phase 1 — 2026-05-10
 
 ---
 
@@ -225,3 +227,6 @@
 | 2026-05-02 | Phase 0.4 完成：Supplier + FixtureTemplate 两个 Model + Migration 24fbd93c72dc + seed_data.py（10 角色 / 12 状态 / 6 设备代号 / 11 供应商 / 42 治具模板）三步验收通过（首跑 / 幂等 / --reset） | Claude |
 | 2026-05-10 | Phase 0.5 完成：Doc/09_dev_rules.md 内容对齐 CLAUDE.md 2026-04-29 修订记录的 4 条 Phase 0.3 实战教训（后端 #1/#7/#11 子条 + 命名约定表"自定义异常类"行）+ Checklist 4 项 + 文末新增"六、修订记录"；路径修正 7 处显示文本 `docs/` → `Doc/`；CLAUDE.md §j 同步登记 | Claude |
 | 2026-05-10 | Phase 0.1 全部完成：Python 3.12 / Node.js LTS + pnpm / Git / .env.development 模板 / Docker MySQL 连接验证 | Frank |
+| 2026-05-10 | Phase 0.6 完成：Vue 3 + ElementPlus + Pinia + Router 项目初始化、utils/storage.js token 封装、parseBackendTime 工具、axios 401/409 拦截器、登录/主框架/Home/NotFound 视图、eslint 拦截规则（dayjs 裸调 + @/ 路径）；pnpm build 编译通过；eslint 拦截验证通过；联调登录冒烟测试通过 | Claude |
+| 2026-05-10 | Phase 0.7 进行中：联调登录通过；TASKS.md / CLAUDE.md 更新进度同步 | Claude |
+| 2026-05-10 | Phase 0 全部完成：0.2 生产机预演 9 项 + 0.7 CI(.github/workflows/ci.yml) + 团队 review 全部勾选；当前阶段切换至 Phase 1 | Frank |

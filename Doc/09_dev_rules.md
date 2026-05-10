@@ -50,7 +50,7 @@
 
 ### 后端 #9：报表导出限制
 
-- **必须**：按 V1.3 三档分类(第一档前端 SheetJS / 第二档后端 `openpyxl(write_only=True)` 流式 / 第三档 APScheduler 月度预生成);第二档及以上必须用 `openpyxl` 的 **`Workbook(write_only=True)`** 模式 + 数据库游标分批查询。详见 [docs/07_export_guideline.md](./07_export_guideline.md)。
+- **必须**：按 V1.3 三档分类(第一档前端 SheetJS / 第二档后端 `openpyxl(write_only=True)` 流式 / 第三档 APScheduler 月度预生成);第二档及以上必须用 `openpyxl` 的 **`Workbook(write_only=True)`** 模式 + 数据库游标分批查询。详见 [Doc/07_export_guideline.md](./07_export_guideline.md)。
 - **禁止**：使用 `pandas.DataFrame.to_excel()`；使用 `openpyxl` 默认（非 write_only）模式；`query.all()` 一次性加载万行数据；任何"用户触发异步导出 + 邮件下载链接 / 状态轮询"工作流。
 
 ### 后端 #10：日志切割
@@ -94,7 +94,7 @@
 
 ### 前端 #6：权限按钮派生自 permissions.js
 
-- **必须**：所有页面/按钮的可见性通过 `stores/auth.js` 的 `hasPermission(action)` 判断；`permissions.js` 派生自 [docs/05_permissions.md](./05_permissions.md) 的权限矩阵。
+- **必须**：所有页面/按钮的可见性通过 `stores/auth.js` 的 `hasPermission(action)` 判断；`permissions.js` 派生自 [Doc/05_permissions.md](./05_permissions.md) 的权限矩阵。
 - **禁止**：在每个组件内硬编码角色判断（如 `if (role === 'pm')`）；前端权限作为唯一防线（必须后端独立校验）。
 
 ### 前端 #7：eslint 规则建议
@@ -126,7 +126,7 @@ rules: {
 ### 前端 #8：报表导出严格对齐 V1.3 三档
 
 - **必须**：单表列表 < 1000 条用前端 `xlsx` (SheetJS) 库直接生成；多表关联或 > 1000 条调后端流式接口（`GET /api/projects/export`、`GET /api/fixtures/export`）；月度大报表通过 APScheduler 每月 1 日 02:30 预生成，用户去附件中心下载。
-- **禁止**：前端 `xlsx` 库导出 1000 行以上（浏览器卡崩）；前端通过 `JSON.stringify` 拼接巨型 CSV 触发下载；**任何"用户触发的异步导出 + 邮件下载链接 / 状态轮询"工作流**（V1.3 明确不采用此模式）。详见 [docs/07_export_guideline.md](./07_export_guideline.md)。
+- **禁止**：前端 `xlsx` 库导出 1000 行以上（浏览器卡崩）；前端通过 `JSON.stringify` 拼接巨型 CSV 触发下载；**任何"用户触发的异步导出 + 邮件下载链接 / 状态轮询"工作流**（V1.3 明确不采用此模式）。详见 [Doc/07_export_guideline.md](./07_export_guideline.md)。
 
 ---
 
@@ -153,7 +153,7 @@ rules: {
 
 ### 通用
 
-- [ ] 改动是否更新到 docs/ 下的对应文档？
+- [ ] 改动是否更新到 Doc/ 下的对应文档？
 - [ ] 改动是否需要更新 CLAUDE.md 或 TASKS.md？
 - [ ] 单元测试是否覆盖关键路径？
 
@@ -189,6 +189,6 @@ rules: {
 - **乐观锁原则** → [架构文档第 2.9 节](./03_architecture_v1.4.md)
 - **状态机实现** → [架构文档第 3.3 节](./03_architecture_v1.4.md)
 - **告警去重** → [架构文档第 3.6 节](./03_architecture_v1.4.md)
-- **导出三档** → [docs/07_export_guideline.md](./07_export_guideline.md)
-- **权限矩阵** → [docs/05_permissions.md](./05_permissions.md)
-- **API 规约** → [docs/04_api_spec.md](./04_api_spec.md)
+- **导出三档** → [Doc/07_export_guideline.md](./07_export_guideline.md)
+- **权限矩阵** → [Doc/05_permissions.md](./05_permissions.md)
+- **API 规约** → [Doc/04_api_spec.md](./04_api_spec.md)

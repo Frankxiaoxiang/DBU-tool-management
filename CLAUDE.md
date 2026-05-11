@@ -62,6 +62,7 @@ DBU 模治具管理系统服务于 Stoneplus Thermal Management 制造技术 / �
 | [Doc/07_export_guideline.md](./Doc/07_export_guideline.md) | 报表导出三档策略 | 低 |
 | [Doc/08_deployment_windows.md](./Doc/08_deployment_windows.md) | Windows 生产部署手册 | 低 |
 | [Doc/09_dev_rules.md](./Doc/09_dev_rules.md) | 开发铁律（后端 11 + 前端 8） | 中 |
+| [Doc/PROMPT_TEMPLATES.md](./Doc/PROMPT_TEMPLATES.md) | CLI AI 协作提示词模板库（T00~T07） | 中（新增模板或铁律改版时） |
 | [TASKS.md](./TASKS.md) | 当前阶段任务进度 | 极高（每日） |
 
 ---
@@ -442,3 +443,5 @@ db.session.commit()
 | 2026-04-29 | 基于 Phase 0.3 实施反馈补入：§e.1 dotenv 加载顺序铁律、§d Rule 1 关联表 charset 子条、§e.5 StaleDataError 导入路径补充、§h 异常命名陷阱新增行 | Frank |
 | 2026-05-10 | Phase 0.5 落位：① Doc/09_dev_rules.md 内 7 处 `docs/` 显示文本修正为 `Doc/`；② Doc/09_dev_rules.md 同步本表 2026-04-29 写入的 4 条 Phase 0.3 实战教训（后端 #1 dotenv 顺序、#7 StaleDataError 2.x 路径、#11 关联表 charset、命名约定表"自定义异常类"行）+ Checklist 后端段新增 4 项 | Claude |
 | 2026-05-10 | Phase 0.6 实战补入 Rule 14：前端 ESLint 版本约束（eslint@8 + eslint-plugin-vue@9 + eslint-config-prettier；@vue/eslint-config-prettier@10 flat config 不兼容；views/ 目录关闭 multi-word-component-names） | Claude |
+| 2026-05-11 | §b 关键文档导航表新增 Doc/PROMPT_TEMPLATES.md 索引行（CLI AI 协作提示词模板库 T00~T07） | Claude |
+| 2026-05-11 | Phase 1 Step 1-0-1：补全 `Doc/04_api_spec.md` §1.1（9 端点）与 §1.2（6 端点 + seal/unseal 草案），新增 `Doc/05_permissions.md` §五（项目与批次端点 @require_role 映射表及前端 permissions.js 派生规则）；同步修正 prompt.txt 路径与 maxLength 错误 | Claude |

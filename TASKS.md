@@ -118,16 +118,49 @@
 
 ---
 
-## Phase 1 — 项目与批次模块（待进入阶段时细化）
+## Phase 1 — 项目与批次模块
 
-> **Phase 1-7 子任务将在进入对应阶段时细化。**
+🟢 进行中 | 详细参数见 [TASKS_Phase1_detail.md](./TASKS_Phase1_detail.md)（共 19 个 Step，5 个子模块）
 
-- [ ] 项目 CRUD（含作废）
-- [ ] 需求批次 CRUD（手动版 / 量产版 / 加开-加量 / 加开-优化）
-- [ ] 批次类型业务规则与状态流转
-- [ ] 手动版封存 / 解封逻辑
-- [ ] 项目-批次-治具三层数据结构
-- [ ] 模板快照机制（创建时锁定 + sync_missing_templates）
+> **建议执行顺序**：1-0-1 → 1-1-1 → 1-1-2 → 1-1-3 → 1-2-1 → 1-2-2 → 1-2-3 → 1-1-4 → 1-1-5 → 1-2-4 → 1-3-1 → 1-3-2 → 1-3-3 → 1-3-4 → 1-3-5 → 1-4-1 →（决策点）→ 1-4-2 → 1-5-1 → 1-5-2
+> **当前进行到**：Step 1-1-1（未开始）
+
+### 1.0 准备（1 步）
+
+- [x] **1-0-1** API spec & 权限矩阵补全（04_api_spec.md §1.1 9端点 + §1.2 6端点+2草案；05_permissions.md §五 17行）— 2026-05-11
+
+### 1.1 项目模块（5 步）
+
+- [ ] **1-1-1** Project Model + Migration（T01）
+- [ ] **1-1-2** project_service + Blueprint（T02）含 code_generator.generate_project_code()
+- [ ] **1-1-3** project_service 单元测试（T07）
+- [ ] **1-1-4** ProjectList 前端列表页（T03）含 utils/status.js 初建
+- [ ] **1-1-5** ProjectForm 前端表单页，create/edit/detail 三合一（T04）
+
+### 1.2 模板快照机制（4 步）
+
+- [ ] **1-2-1** FixtureTemplateSnapshot Model + Migration（T01）
+- [ ] **1-2-2** snapshot_service + 集成 project_service.create_project + /sync-templates 端点（T02）
+- [ ] **1-2-3** snapshot_service 单元测试（T07）
+- [ ] **1-2-4** ProjectForm/Detail "追加同步模板"按钮（T04 扩展）
+
+### 1.3 批次模块（5 步）
+
+- [ ] **1-3-1** Batch Model + Migration（T01）含 4 种批次类型字段
+- [ ] **1-3-2** batch_service + Blueprint（T02）含批次类型业务规则 + batch_no 自动生成
+- [ ] **1-3-3** batch_service 单元测试（T07）含 4 种类型规则违反用例
+- [ ] **1-3-4** BatchList 前端列表页（T03）
+- [ ] **1-3-5** BatchForm 前端表单页（T04）含批次类型联动校验
+
+### 1.4 手动版封存 / 解封（2 步，第 2 步可选）
+
+- [ ] **1-4-1** 封存/解封 API spec & 业务规则文档化 + 3 条 open questions（手写提示词）
+- [ ] **1-4-2** ⚠️ 可选（Frank 决策后）：seal/unseal 接口骨架（T02）
+
+### 1.5 Phase 1 收尾（2 步）
+
+- [ ] **1-5-1** 项目—批次链路端到端联调，5 条冒烟脚本（手写提示词）
+- [ ] **1-5-2** TASKS.md / CLAUDE.md 进度同步（手写提示词）
 
 ---
 

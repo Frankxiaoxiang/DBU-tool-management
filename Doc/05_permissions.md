@@ -119,3 +119,45 @@
 | `/api/auth/refresh` | POST | 任意已登录用户 | 持有有效 refresh token 即可 |
 | `/api/auth/logout` | POST | 任意已登录用户 | 持有有效 access token 即可 |
 | `/api/auth/me` | GET | 任意已登录用户 | 持有有效 access token 即可 |
+
+---
+
+## 五、Phase 1 项目与批次模块端点权限（@require_role 映射）
+
+> **说明**：本节是后端 `@require_role()` 装饰器的单一真实来源，前端 `permissions.js` 按钮级权限派生自此表。凡实现端点必须严格对照本节标注。
+
+| 端点 | 方法 | @require_role（允许角色） | 备注 |
+|------|------|--------------------------|------|
+| `/api/projects` | GET | 任意已登录用户 | 宽视图原则，所有角色均可查看 |
+| `/api/projects` | POST | `super_admin`, `pm` | 需求发起责任方 |
+| `/api/projects/:id` | GET | 任意已登录用户 | 同上 |
+| `/api/projects/:id` | PUT | `super_admin`, `pm` | 项目信息编辑 |
+| `/api/projects/:id/cancel` | PATCH | `super_admin`, `pm` | 作废项目 |
+| `/api/projects/:id/owner` | PUT | `super_admin` | 负责人转移属高权操作，仅超管 |
+| `/api/projects/:id/gantt` | GET | 任意已登录用户 | 只读甘特图 |
+| `/api/projects/:id/sync-templates` | POST | `super_admin` | 模板库变更追加快照，仅超管 |
+| `/api/projects/export` | GET | 任意已登录用户 | 导出列表属只读操作 |
+| `/api/batches` | POST | `super_admin`, `pm` | 新建需求批次 |
+| `/api/batches/:id` | GET | 任意已登录用户 | 宽视图 |
+| `/api/batches/:id` | PUT | `super_admin`, `pm` | 编辑批次 |
+| `/api/batches/:id/cancel` | PATCH | `super_admin`, `pm` | 作废批次 |
+| `/api/batches/:id/fixtures` | GET | 任意已登录用户 | 只读 |
+| `/api/batches/:id/gantt` | GET | 任意已登录用户 | 只读 |
+| `/api/batches/:id/seal` | PATCH | `super_admin`, `warehouse` | 封存操作（草案，实现待 Phase 3） |
+| `/api/batches/:id/unseal` | PATCH | `super_admin` | Phase 1 暂仅超管；Phase 4 扩展为 PM + 生产主管会签 |
+
+**前端 `permissions.js` 派生规则（供 Phase 1 前端 Step 参考）：**
+```javascript
+const PROJECT_PERMISSIONS = {
+  'project.create':         ['super_admin', 'pm'],
+  'project.edit':           ['super_admin', 'pm'],
+  'project.cancel':         ['super_admin', 'pm'],
+  'project.transfer_owner': ['super_admin'],
+  'project.sync_templates': ['super_admin'],
+  'batch.create':           ['super_admin', 'pm'],
+  'batch.edit':             ['super_admin', 'pm'],
+  'batch.cancel':           ['super_admin', 'pm'],
+  'batch.seal':             ['super_admin', 'warehouse'],
+  'batch.unseal':           ['super_admin'],
+}
+```

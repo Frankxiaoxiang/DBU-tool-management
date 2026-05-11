@@ -46,30 +46,717 @@
 
 ## 1. 项目与批次
 
-### 1.1 项目(无 DELETE)
+### 1.1 项目（无 DELETE）
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/api/projects` | 项目列表(支持按产品类型/状态/负责人过滤) |
-| POST | `/api/projects` | 新建项目(系统分配 project_code) |
-| GET | `/api/projects/:id` | 项目详情(含挂载批次) |
-| PUT | `/api/projects/:id` | 编辑项目(含 version 字段) |
-| PATCH | `/api/projects/:id/cancel` | ★ 作废项目(status=cancelled,需填 reason) |
-| PUT | `/api/projects/:id/owner` | 转移项目负责人 |
-| GET | `/api/projects/:id/gantt?batch_id=` | 项目甘特图数据(可按 batch_id 过滤) |
-| POST | `/api/projects/:id/sync-templates` | 追加同步模板快照(仅补缺,不覆盖) |
-| GET | `/api/projects/export?ids=&format=xlsx` | ★ 项目列表导出 |
+---
 
-### 1.2 批次(无 DELETE)
+#### GET /api/projects
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | `/api/batches` | 新建需求批次(挂载于项目下,含批次类型) |
-| GET | `/api/batches/:id` | 批次详情 |
-| PUT | `/api/batches/:id` | 编辑批次 |
-| PATCH | `/api/batches/:id/cancel` | ★ 作废批次 |
-| GET | `/api/batches/:id/fixtures` | 该批次下所有治具清单 |
-| GET | `/api/batches/:id/gantt` | 批次甘特图数据 |
+**说明**：项目列表，支持多条件过滤与分页
+**Auth**：Bearer access token（任意已登录用户）
+
+**Query Params**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `product_type` | string | 否 | 枚举：`SUS_VC` / `CU_VC` / `HP` |
+| `status` | string | 否 | 枚举：`active` / `closed` / `cancelled` |
+| `owner_id` | int | 否 | 按项目负责人 ID 过滤 |
+| `keyword` | string | 否 | 模糊匹配 `project_code` 或 `project_name` |
+| `page` | int | 否 | 默认 1 |
+| `per_page` | int | 否 | 默认 20，上限 100 |
+
+**响应 200**
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "items": [
+      {
+        "id": 1,
+        "project_code": "SUS01",
+        "project_name": "SUS VC 2026 Q1",
+        "product_type": "SUS_VC",
+        "project_owner_id": 3,
+        "owner_name": "张三",
+        "status": "active",
+        "created_at": "2026-05-11T09:00:00+08:00",
+        "updated_at": "2026-05-11T09:00:00+08:00",
+        "version": 0
+      }
+    ],
+    "total": 50,
+    "page": 1,
+    "per_page": 20
+  }
+}
+```
+
+---
+
+#### POST /api/projects
+
+**说明**：新建项目（`project_code` 由用户指定，后端做格式与唯一性校验）
+**Auth**：Bearer access token（`@require_role: super_admin, pm`）
+
+**请求体**
+```json
+{
+  "project_code": "SUS01",
+  "project_name": "SUS VC 2026 Q1",
+  "product_type": "SUS_VC",
+  "project_owner_id": 3
+}
+```
+
+| 字段 | 类型 | 必填 | 约束 |
+|------|------|------|------|
+| `project_code` | string | 是 | 格式 `^[A-Z]{2,6}$`，系统全局唯一 |
+| `project_name` | string | 是 | maxLength=100 |
+| `product_type` | string | 是 | 枚举：`SUS_VC` / `CU_VC` / `HP` |
+| `project_owner_id` | int | 是 | 必须是存在且 `is_active=TRUE` 的用户 |
+
+**响应 201**
+```json
+{
+  "code": 201,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "project_code": "SUS01",
+    "project_name": "SUS VC 2026 Q1",
+    "product_type": "SUS_VC",
+    "project_owner_id": 3,
+    "owner_name": "张三",
+    "status": "active",
+    "cancelled_reason": null,
+    "cancelled_at": null,
+    "cancelled_by": null,
+    "created_by": 1,
+    "created_at": "2026-05-11T09:00:00+08:00",
+    "updated_at": "2026-05-11T09:00:00+08:00",
+    "version": 0
+  }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 400 | project_code 格式不合规（须匹配 `^[A-Z]{2,6}$`） |
+| 400 | project_name 不得为空 |
+| 400 | product_type 非法值 |
+| 404 | project_owner_id 对应用户不存在或已停用 |
+| 409 | project_code 已存在 |
+
+---
+
+#### GET /api/projects/:id
+
+**说明**：项目详情，含挂载批次摘要
+**Auth**：Bearer access token（任意已登录用户）
+
+**响应 200**
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "project_code": "SUS01",
+    "project_name": "SUS VC 2026 Q1",
+    "product_type": "SUS_VC",
+    "project_owner_id": 3,
+    "owner_name": "张三",
+    "status": "active",
+    "cancelled_reason": null,
+    "cancelled_at": null,
+    "cancelled_by": null,
+    "created_by": 1,
+    "created_at": "2026-05-11T09:00:00+08:00",
+    "updated_at": "2026-05-11T09:00:00+08:00",
+    "version": 2,
+    "batches": [
+      {
+        "id": 10,
+        "batch_no": "B001",
+        "batch_type": "manual_init",
+        "status": "active",
+        "created_at": "2026-05-11T10:00:00+08:00"
+      }
+    ]
+  }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 404 | 项目不存在 |
+
+---
+
+#### PUT /api/projects/:id
+
+**说明**：编辑项目信息（字段更新用 `'key' in body` 判断，见 CLAUDE.md §d Rule 5）
+**Auth**：Bearer access token（`@require_role: super_admin, pm`）
+
+**请求体**（所有业务字段可选，`version` 必填）
+```json
+{
+  "project_name": "SUS VC 2026 Q2",
+  "product_type": "SUS_VC",
+  "project_owner_id": 5,
+  "version": 2
+}
+```
+
+| 字段 | 类型 | 必填 | 约束 |
+|------|------|------|------|
+| `project_name` | string | 否 | maxLength=100，不得为空字符串 |
+| `product_type` | string | 否 | 枚举：`SUS_VC` / `CU_VC` / `HP` |
+| `project_owner_id` | int | 否 | 必须是存在且 `is_active=TRUE` 的用户 |
+| `version` | int | **是** | 乐观锁版本号 |
+
+**响应 200**
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": { "（ProjectDetail 全字段，version 已递增）": "..." }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 400 | version 为必填项 |
+| 400 | project_name 不得为空字符串 |
+| 404 | 项目不存在 |
+| 409 | 数据已被其他请求修改，请刷新后重试（data: { server_version, your_version }） |
+
+---
+
+#### PATCH /api/projects/:id/cancel
+
+**说明**：作废项目（status → cancelled，不可逆，无 DELETE 端点）
+**Auth**：Bearer access token（`@require_role: super_admin, pm`）
+
+**请求体**
+```json
+{ "reason": "项目终止，产品停产", "version": 2 }
+```
+
+| 字段 | 类型 | 必填 | 约束 |
+|------|------|------|------|
+| `reason` | string | 是 | 作废理由，不得为空 |
+| `version` | int | 是 | 乐观锁版本号 |
+
+**响应 200**
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "status": "cancelled",
+    "cancelled_reason": "项目终止，产品停产",
+    "cancelled_at": "2026-05-11T14:00:00+08:00",
+    "cancelled_by": 1,
+    "version": 3
+  }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 400 | reason 不得为空 |
+| 400 | version 为必填项 |
+| 404 | 项目不存在 |
+| 409 | 数据已被其他请求修改，请刷新后重试 |
+| 422 | 项目已处于 cancelled 状态 |
+
+---
+
+#### PUT /api/projects/:id/owner
+
+**说明**：转移项目负责人（高权操作，仅超管可执行）
+**Auth**：Bearer access token（`@require_role: super_admin`）
+
+**请求体**
+```json
+{ "new_owner_id": 5, "version": 2 }
+```
+
+| 字段 | 类型 | 必填 | 约束 |
+|------|------|------|------|
+| `new_owner_id` | int | 是 | 必须是存在且 `is_active=TRUE` 的用户 |
+| `version` | int | 是 | 乐观锁版本号 |
+
+**响应 200**
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": { "id": 1, "project_owner_id": 5, "owner_name": "李四", "version": 3 }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 400 | new_owner_id 为必填项 |
+| 404 | new_owner_id 对应用户不存在或已停用 |
+| 404 | 项目不存在 |
+| 409 | 数据已被其他请求修改，请刷新后重试 |
+
+---
+
+#### GET /api/projects/:id/gantt
+
+**说明**：项目甘特图数据，可按 batch_id 下钻
+**Auth**：Bearer access token（任意已登录用户）
+
+**Query Params**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `batch_id` | int | 否 | 按批次 ID 下钻过滤 |
+
+**响应 200**
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": { "project_id": 1, "batches": [] }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 404 | 项目不存在 |
+
+> ⚠️ Phase 1 仅返回占位数据结构（`batches: []`），完整甘特图数据依赖 Phase 2 治具节点，实现待 Phase 2。
+
+---
+
+#### POST /api/projects/:id/sync-templates
+
+**说明**：对比当前模板库与项目快照，仅追加新增模板（不覆盖、不删除已有快照）；操作写审计日志
+**Auth**：Bearer access token（`@require_role: super_admin`）
+
+**请求体**：无
+
+**响应 200**
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": { "synced_count": 3, "message": "已追加 3 条新模板快照" }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 404 | 项目不存在 |
+
+> ⚠️ Phase 1 仅写 spec 草案，实现在 Step 1-2-2。
+
+---
+
+#### GET /api/projects/export
+
+**说明**：项目列表导出（xlsx 格式）
+**Auth**：Bearer access token（任意已登录用户）
+
+> ⚠️ Flask 路由注册时须将此端点置于 `GET /api/projects/<int:id>` **之前**，避免字符串 "export" 被误作整数 ID 匹配。
+
+**Query Params**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `ids` | string | 否 | 逗号分隔的 project id 列表 |
+| `product_type` | string | 否 | 同列表过滤参数 |
+| `status` | string | 否 | 同列表过滤参数 |
+| `format` | string | 否 | 固定为 `xlsx` |
+
+**响应**：流式 xlsx 文件
+- `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+- `Content-Disposition: attachment; filename="projects_export.xlsx"`
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 400 | format 仅支持 xlsx |
+
+> ⚠️ 按 Doc/07_export_guideline.md 三档策略：行数 < 1000 时前端 SheetJS 自行生成，本端点仅服务多表关联或 > 1000 行场景，实现待 Phase 6。
+
+---
+
+### 1.2 批次（无 DELETE）
+
+#### batch_type 枚举
+
+| 枚举值 | 含义 |
+|--------|------|
+| `manual_init` | 手工版初版批次（最初开模需求） |
+| `mass_prod` | 量产转产批次（正式量产立项） |
+| `addon_quantity` | 加开-加量批次（套数补充，复制图纸） |
+| `addon_optimize` | 加开-优化批次（改版优化，复制结构） |
+
+---
+
+#### POST /api/batches
+
+**说明**：在项目下新建需求批次
+**Auth**：Bearer access token（`@require_role: super_admin, pm`）
+
+**请求体**
+```json
+{
+  "project_id": 1,
+  "batch_no": "B001",
+  "batch_type": "manual_init",
+  "planned_start_date": "2026-06-01",
+  "planned_end_date": "2026-08-31",
+  "remark": "首批开模"
+}
+```
+
+| 字段 | 类型 | 必填 | 约束 |
+|------|------|------|------|
+| `project_id` | int | 是 | 对应存在的项目 |
+| `batch_no` | string | 是 | VARCHAR(32)，同一项目内唯一 |
+| `batch_type` | string | 是 | 枚举，见上表 |
+| `planned_start_date` | string | 否 | 格式 `YYYY-MM-DD` |
+| `planned_end_date` | string | 否 | 格式 `YYYY-MM-DD` |
+| `remark` | string | 否 | 备注 |
+
+**响应 201**
+```json
+{
+  "code": 201,
+  "message": "success",
+  "data": {
+    "id": 10,
+    "project_id": 1,
+    "project_code": "SUS01",
+    "batch_no": "B001",
+    "batch_type": "manual_init",
+    "status": "active",
+    "planned_start_date": "2026-06-01",
+    "planned_end_date": "2026-08-31",
+    "sealed_at": null,
+    "sealed_by": null,
+    "cancelled_reason": null,
+    "cancelled_at": null,
+    "cancelled_by": null,
+    "remark": "首批开模",
+    "created_by": 1,
+    "created_at": "2026-05-11T09:00:00+08:00",
+    "updated_at": "2026-05-11T09:00:00+08:00",
+    "version": 0
+  }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 400 | project_id 为必填项 |
+| 400 | batch_type 非法值 |
+| 404 | project_id 对应项目不存在 |
+| 409 | 同项目下 batch_no 已存在 |
+| 422 | 项目已处于 cancelled 状态，不可新建批次 |
+
+---
+
+#### GET /api/batches/:id
+
+**说明**：批次详情
+**Auth**：Bearer access token（任意已登录用户）
+
+**响应 200**
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "id": 10,
+    "project_id": 1,
+    "project_code": "SUS01",
+    "batch_no": "B001",
+    "batch_type": "manual_init",
+    "status": "active",
+    "planned_start_date": "2026-06-01",
+    "planned_end_date": "2026-08-31",
+    "sealed_at": null,
+    "sealed_by": null,
+    "cancelled_reason": null,
+    "cancelled_at": null,
+    "cancelled_by": null,
+    "remark": "首批开模",
+    "created_by": 1,
+    "created_at": "2026-05-11T09:00:00+08:00",
+    "updated_at": "2026-05-11T09:00:00+08:00",
+    "version": 2,
+    "fixture_count": 0
+  }
+}
+```
+
+> ⚠️ `fixture_count` 在 Phase 1 固定返回 0，实际治具数量待 Phase 2 实现。
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 404 | 批次不存在 |
+
+---
+
+#### PUT /api/batches/:id
+
+**说明**：编辑批次信息（字段更新用 `'key' in body` 判断）
+**Auth**：Bearer access token（`@require_role: super_admin, pm`）
+
+**请求体**（所有业务字段可选，`version` 必填）
+```json
+{
+  "batch_no": "B002",
+  "batch_type": "mass_prod",
+  "planned_start_date": "2026-07-01",
+  "planned_end_date": "2026-09-30",
+  "remark": "更新备注",
+  "version": 2
+}
+```
+
+| 字段 | 类型 | 必填 | 约束 |
+|------|------|------|------|
+| `batch_no` | string | 否 | VARCHAR(32)，同项目内唯一 |
+| `batch_type` | string | 否 | 枚举，见 §1.2 枚举表 |
+| `planned_start_date` | string | 否 | 格式 `YYYY-MM-DD` |
+| `planned_end_date` | string | 否 | 格式 `YYYY-MM-DD` |
+| `remark` | string | 否 | 备注 |
+| `version` | int | **是** | 乐观锁版本号 |
+
+**响应 200**
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": { "（BatchDetail 全字段，version 已递增）": "..." }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 400 | version 为必填项 |
+| 404 | 批次不存在 |
+| 409 | 数据已被其他请求修改，请刷新后重试 |
+| 422 | 已封存的批次不可编辑 |
+| 422 | 已 cancelled 的批次不可编辑 |
+
+---
+
+#### PATCH /api/batches/:id/cancel
+
+**说明**：作废批次（status → cancelled，不可逆，无 DELETE 端点）
+**Auth**：Bearer access token（`@require_role: super_admin, pm`）
+
+**请求体**
+```json
+{ "reason": "需求变更，批次作废", "version": 2 }
+```
+
+| 字段 | 类型 | 必填 | 约束 |
+|------|------|------|------|
+| `reason` | string | 是 | 作废理由，不得为空 |
+| `version` | int | 是 | 乐观锁版本号 |
+
+**响应 200**
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "id": 10,
+    "status": "cancelled",
+    "cancelled_reason": "需求变更，批次作废",
+    "cancelled_at": "2026-05-11T14:00:00+08:00",
+    "cancelled_by": 1,
+    "version": 3
+  }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 400 | reason 不得为空 |
+| 400 | version 为必填项 |
+| 404 | 批次不存在 |
+| 409 | 数据已被其他请求修改，请刷新后重试 |
+| 422 | 批次已处于 cancelled 状态 |
+
+---
+
+#### GET /api/batches/:id/fixtures
+
+**说明**：批次下的治具清单（分页）
+**Auth**：Bearer access token（任意已登录用户）
+
+**Query Params**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `page` | int | 否 | 默认 1 |
+| `per_page` | int | 否 | 默认 20 |
+
+**响应 200**
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": { "items": [], "total": 0, "page": 1, "per_page": 20 }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 404 | 批次不存在 |
+
+> ⚠️ Phase 1 固定返回空列表，实际治具数据待 Phase 2。
+
+---
+
+#### GET /api/batches/:id/gantt
+
+**说明**：批次甘特图数据
+**Auth**：Bearer access token（任意已登录用户）
+
+**响应 200**
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": { "batch_id": 10, "fixtures": [] }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 404 | 批次不存在 |
+
+> ⚠️ Phase 1 仅返回占位结构，完整实现待 Phase 2。
+
+---
+
+#### PATCH /api/batches/:id/seal（草案）
+
+**说明**：封存批次（量产投产后将手工版批次封存）
+**Auth**：Bearer access token（`@require_role: super_admin, warehouse`）
+
+**请求体**
+```json
+{ "version": 2 }
+```
+
+| 字段 | 类型 | 必填 | 约束 |
+|------|------|------|------|
+| `version` | int | 是 | 乐观锁版本号 |
+
+**响应 200**
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "id": 10,
+    "status": "sealed",
+    "sealed_at": "2026-05-11T14:00:00+08:00",
+    "sealed_by": 1,
+    "version": 3
+  }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 400 | version 为必填项 |
+| 404 | 批次不存在 |
+| 409 | 数据已被其他请求修改，请刷新后重试 |
+| 422 | 批次已处于封存状态 |
+| 422 | 批次已处于 cancelled 状态 |
+
+> ⚠️ Phase 1 spec 草案，实现待 Phase 3（仓储模块）。`sealed_at` / `sealed_by` / `status='sealed'` 字段需在 Step 1-1-1 建模时确认写入 batches 表。
+
+---
+
+#### PATCH /api/batches/:id/unseal（草案）
+
+**说明**：解封批次（Phase 1 暂仅 super_admin 可操作；Phase 4 扩展为 PM + 生产主管会签审批流）
+**Auth**：Bearer access token（`@require_role: super_admin`）
+
+**请求体**
+```json
+{ "reason": "生产需求临时解封", "version": 3 }
+```
+
+| 字段 | 类型 | 必填 | 约束 |
+|------|------|------|------|
+| `reason` | string | 是 | 解封理由，不得为空 |
+| `version` | int | 是 | 乐观锁版本号 |
+
+**响应 200**
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "id": 10,
+    "status": "active",
+    "sealed_at": null,
+    "sealed_by": null,
+    "version": 4
+  }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 400 | reason 不得为空 |
+| 400 | version 为必填项 |
+| 404 | 批次不存在 |
+| 409 | 数据已被其他请求修改，请刷新后重试 |
+| 422 | 批次未处于封存状态 |
+
+> ⚠️ Phase 1 spec 草案；Phase 4 扩展为 PM + 生产主管会签，届时更新本条目。`sealed_at` / `sealed_by` 字段需在 Step 1-1-1 建模时确认写入 batches 表。
 
 ---
 

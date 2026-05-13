@@ -1,0 +1,6 @@
+  之后进入 Phase 0.7 — Phase 0 收尾：
+
+  - 标记 "后端 + 前端能联调登录流程" 已完成
+  - CI 基础测试（如有）
+  - TASKS.md / CLAUDE.md 更新收尾
+  - 团队 review 后正式进入 Phase 1

@@ -1,0 +1,163 @@
+from pathlib import Path
+import pytest
+from dotenv import load_dotenv
+from sqlalchemy.orm import sessionmaker, scoped_session
+from flask_jwt_extended import create_access_token
+from werkzeug.security import generate_password_hash
+
+# 必须在 create_app 之前：TestingConfig 类体在 import 时求值 os.environ.get('TEST_DATABASE_URL')
+load_dotenv(Path(__file__).resolve().parent.parent.parent / '.env.testing', override=True)
+
+from app import create_app        # noqa: E402
+from extensions import db, scheduler         # noqa: E402
+from app.models.user import User  # noqa: E402
+from app.models.role import Role  # noqa: E402
+from app.models.project import Project  # noqa: E402
+
+
+# ---------------------------------------------------------------------------
+# 会话级 fixture：建表一次，会话结束后 drop
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(scope='session')
+def app():
+    application = create_app('testing')
+    with application.app_context():
+        db.create_all()
+    yield application
+    try:
+        scheduler.shutdown(wait=False)
+    except Exception:
+        pass
+    with application.app_context():
+        db.drop_all()
+
+
+# ---------------------------------------------------------------------------
+# 函数级事务隔离：connection-level transaction + nested savepoint
+# Service 内的 db.session.commit() 只释放 savepoint，外层 transaction 在用例结束后 rollback
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(scope='function')
+def db_session(app):
+    with app.app_context():
+        connection = db.engine.connect()
+        transaction = connection.begin()
+        _original_session = db.session
+        db.session = scoped_session(
+            sessionmaker(
+                bind=connection,
+                join_transaction_mode='create_savepoint',
+            )
+        )
+        try:
+            yield db.session
+        finally:
+            db.session.remove()
+            db.session = _original_session
+            transaction.rollback()
+            connection.close()
+
+
+@pytest.fixture(scope='function')
+def client(app, db_session):
+    return app.test_client()
+
+
+# ---------------------------------------------------------------------------
+# 种子数据 fixtures（每个用例独立，事务 rollback 后自动还原）
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def seeded_pm_user(db_session):
+    role = Role(code='pm', name='项目经理')
+    db_session.add(role)
+    db_session.flush()
+    user = User(
+        username='pm_test',
+        password_hash=generate_password_hash('Test1234!'),
+        full_name='测试PM',
+        email='pm@test.com',
+        is_active=True,
+    )
+    user.roles.append(role)
+    db_session.add(user)
+    db_session.flush()
+    return user
+
+
+@pytest.fixture
+def seeded_iqc_user(db_session):
+    role = Role(code='iqc', name='IQC检验员')
+    db_session.add(role)
+    db_session.flush()
+    user = User(
+        username='iqc_test',
+        password_hash=generate_password_hash('Test1234!'),
+        full_name='测试IQC',
+        email='iqc@test.com',
+        is_active=True,
+    )
+    user.roles.append(role)
+    db_session.add(user)
+    db_session.flush()
+    return user
+
+
+@pytest.fixture
+def seeded_super_admin_user(db_session):
+    role = Role(code='super_admin', name='超级管理员')
+    db_session.add(role)
+    db_session.flush()
+    user = User(
+        username='super_test',
+        password_hash=generate_password_hash('Test1234!'),
+        full_name='超级管理员',
+        email='super@test.com',
+        is_active=True,
+    )
+    user.roles.append(role)
+    db_session.add(user)
+    db_session.flush()
+    return user
+
+
+@pytest.fixture
+def seeded_project(db_session, seeded_pm_user):
+    project = Project(
+        project_code='SEED',
+        project_name='种子项目',
+        product_type='SUS_VC',
+        project_owner_id=seeded_pm_user.id,
+        status='active',
+        created_by=seeded_pm_user.id,
+        version=0,
+    )
+    db_session.add(project)
+    db_session.flush()
+    return project
+
+
+@pytest.fixture
+def auth_headers(seeded_pm_user, seeded_iqc_user, seeded_super_admin_user):
+    """各角色 JWT headers；additional_claims 必须含 role_codes，与 require_role 装饰器对齐。"""
+    return {
+        'pm': {
+            'Authorization': 'Bearer ' + create_access_token(
+                identity=str(seeded_pm_user.id),
+                additional_claims={'role_codes': ['pm']},
+            ),
+        },
+        'iqc': {
+            'Authorization': 'Bearer ' + create_access_token(
+                identity=str(seeded_iqc_user.id),
+                additional_claims={'role_codes': ['iqc']},
+            ),
+        },
+        'super_admin': {
+            'Authorization': 'Bearer ' + create_access_token(
+                identity=str(seeded_super_admin_user.id),
+                additional_claims={'role_codes': ['super_admin']},
+            ),
+        },
+    }

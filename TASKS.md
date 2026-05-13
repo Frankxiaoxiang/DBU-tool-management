@@ -123,7 +123,7 @@
 🟢 进行中 | 详细参数见 [TASKS_Phase1_detail.md](./TASKS_Phase1_detail.md)（共 19 个 Step，5 个子模块）
 
 > **建议执行顺序**：1-0-1 → 1-1-1 → 1-1-2 → 1-1-3 → 1-2-1 → 1-2-2 → 1-2-3 → 1-1-4 → 1-1-5 → 1-2-4 → 1-3-1 → 1-3-2 → 1-3-3 → 1-3-4 → 1-3-5 → 1-4-1 →（决策点）→ 1-4-2 → 1-5-1 → 1-5-2
-> **当前进行到**：Step 1-1-1（未开始）
+> **当前进行到**：Step 1-2-1（未开始）
 
 ### 1.0 准备（1 步）
 
@@ -131,9 +131,9 @@
 
 ### 1.1 项目模块（5 步）
 
-- [ ] **1-1-1** Project Model + Migration（T01）
-- [ ] **1-1-2** project_service + Blueprint（T02）含 code_generator.generate_project_code()
-- [ ] **1-1-3** project_service 单元测试（T07）
+- [x] **1-1-1** Project Model + Migration（T01）— 2026-05-12
+- [x] **1-1-2** project_service + Blueprint（T02）含 code_generator.generate_project_code() — 2026-05-12
+- [x] **1-1-3** project_service 单元测试（T07）— 2026-05-13
 - [ ] **1-1-4** ProjectList 前端列表页（T03）含 utils/status.js 初建
 - [ ] **1-1-5** ProjectForm 前端表单页，create/edit/detail 三合一（T04）
 

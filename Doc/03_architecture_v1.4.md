@@ -273,7 +273,7 @@ CREATE TABLE projects (
   project_name    VARCHAR(100) NOT NULL,
   product_type    ENUM('SUS_VC','CU_VC','HP') NOT NULL,
   project_owner_id BIGINT NOT NULL,
-  status          ENUM('active','closed','cancelled') DEFAULT 'active',
+  status          VARCHAR(16) NOT NULL DEFAULT 'active',  -- 按全系统约定改用 VARCHAR(16)，不使用 ENUM，Service 层校验合法值
   cancelled_reason TEXT NULL,
   cancelled_at    DATETIME NULL,
   cancelled_by    BIGINT NULL,

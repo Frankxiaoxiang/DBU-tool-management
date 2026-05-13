@@ -58,6 +58,9 @@ def create_app(config_name=None):
     from app.blueprints.auth import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
 
+    from app.blueprints.projects import projects_bp
+    app.register_blueprint(projects_bp, url_prefix='/api/projects')
+
     # ⑥ 全局 errorhandler
     _register_error_handlers(app)
 

@@ -123,7 +123,7 @@
 🟢 进行中 | 详细参数见 [TASKS_Phase1_detail.md](./TASKS_Phase1_detail.md)（共 19 个 Step，5 个子模块）
 
 > **建议执行顺序**：1-0-1 → 1-1-1 → 1-1-2 → 1-1-3 → 1-2-1 → 1-2-2 → 1-2-3 → 1-1-4 → 1-1-5 → 1-2-4 → 1-3-1 → 1-3-2 → 1-3-3 → 1-3-4 → 1-3-5 → 1-4-1 →（决策点）→ 1-4-2 → 1-5-1 → 1-5-2
-> **当前进行到**：Step 1-4-2（Frank 决策点，可选）
+> **当前进行到**：Phase 2（未开始）
 
 ### 1.0 准备（1 步）
 
@@ -159,8 +159,8 @@
 
 ### 1.5 Phase 1 收尾（2 步）
 
-- [ ] **1-5-1** 项目—批次链路端到端联调，5 条冒烟脚本（手写提示词）
-- [ ] **1-5-2** TASKS.md / CLAUDE.md 进度同步（手写提示词）
+- [x] **1-5-1** 项目—批次链路端到端联调，5 条冒烟脚本（手写提示词）— 2026-05-14
+- [x] **1-5-2** TASKS.md / CLAUDE.md 进度同步（手写提示词）— 2026-05-14
 
 ---
 
@@ -272,3 +272,5 @@
 | 2026-05-14 | Phase 1 Step 1-3-4 完成：BatchList.vue + api/batch.js + status.js 追加 batch 状态/类型映射（4+4 值）+ 路由 4 条（场景 A projects/:projectId/batches + 场景 B /batches + 2 条占位）；修正 prompt 3 处 bug（/api/ 双前缀 / 路由前导/ / per_page）；父批次列按 Issue 3-B 决策删除；keyword 含 TODO 注释；pnpm build 通过 | Claude |
 | 2026-05-14 | Phase 1 Step 1-3-5 完成：BatchForm.vue（create/edit/detail 三合一）+ api/batch.js 追加 createBatch/updateBatch + 路由替换占位为真实组件（batches/new→:id→:id/edit），保留 name 字段；批次类型联动（isAddon 判断/parent_batch_id 清空/flow_path 重置）+ version 乐观锁携带；修正 prompt 4 处（createBatch URL 补 trailing slash / validate 二段 try-catch / 路由 name 保留 / child meta 去冗余 requiresAuth）；pnpm build 通过 | Claude |
 | 2026-05-14 | Phase 1 Step 1-4-1 完成：seal/unseal ⚠️ 注释更新（04_api_spec.md §1.2 两条草案端点改为 Phase 2/4 正确分期标注 + §3.3.x 引用）；03_architecture_v1.4.md §3.3 末尾追加"手动版封存联动设计"小节（含业务规则/Phase 2 TODO 代码/状态字段设计说明/与三函数关系）；00_open_questions.md 追加 Q-003/Q-004/Q-005；权限文档无需改动（§五 已含完整内容） | Claude |
+| 2026-05-14 | Phase 1 Step 1-5-1 完成：5 条端到端冒烟脚本全部 PASS（curl 验证通道）；修正 prompt 5 处错误（flask shell -c 无效 / Test5-B 权限 PM→SUPER / FixtureTemplate 字段名 code+applicable_products+name+process_step / User.full_name / 模板计数含 BOTH 类）；发现 1 条历史 cancelled 批次（SNAP-M0-1，id=1，属先前单测数据，非本次冒烟产生）；前端双通道验证由 Frank 手动执行后填入 | Claude |
+| 2026-05-14 | Phase 1 Step 1-5-2 完成：CLAUDE.md §c 切换至 Phase 2 / §h 新增 2 条风险行（flask shell -c 无效 + curl POST 尾部斜杠）/ §j 追加完成记录；TASKS.md Phase 1 全部勾选；Phase 1 正式关闭 | Claude |

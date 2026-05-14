@@ -69,16 +69,19 @@ DBU 模治具管理系统服务于 Stoneplus Thermal Management 制造技术 / �
 
 ## c. 当前阶段
 
-**Phase 0 — 基建（约 1 周）**
+**Phase 2 — 模治具核心模块（进行中）**
 
 详细任务清单见 [TASKS.md](./TASKS.md)。当前阶段重点：
 
-- 开发机环境搭建（Docker MySQL / Python venv / pnpm）
-- 生产机预演（Python / MySQL / NSSM 安装）
-- Flask app factory + 三套配置 + 通用响应/异常装饰器
-- 用户/角色模型 + JWT 登录
-- `scripts/seed_data.py` 完整化（超管 / 9 角色 / 11 供应商 / 40+ 治具模板）
-- Vue 项目初始化（含 `utils/datetime.js` + axios 409/401 拦截器）
+- 治具 CRUD（Fixture Model + Migration + Service + Blueprint）
+- 编码自动生成（services/code_generator.py，遵循《编码规则 V1.0》）
+- 图纸版本管理（A1 → A2 → A3 → B1）
+- 加开-复制图纸（parent_fixture_id 溯源）
+- 状态机三函数（transition / reject / force_transition）
+- 状态历史表写入
+- 单元测试覆盖（含 test_no_back_door_in_transition）
+
+> Phase 1 于 2026-05-14 全部完成（项目模块 / 模板快照 / 批次模块 / 封存解封规约 + 端到端联调通过）
 
 ---
 
@@ -421,6 +424,8 @@ db.session.commit()
 | 测试 JWT token 缺 `additional_claims={'role_codes': [...]}` → `@require_role` 静默返回 403，**正向用例全挂且无明显报错** | 写 conftest 时 grep `create_access_token`，确认每处均含 `additional_claims`；`require_role` 从 JWT claims 读 role_codes，不查 DB |
 | Service 代码用废弃 API `Model.query.get(pk)` | SQLAlchemy 2.x 起改用 `db.session.get(Model, pk)`；旧写法产生 `LegacyAPIWarning`，grep `\.query\.get(` 全文不应有匹配 |
 | Model 文件 import 写成 `from app.extensions import db` | 本项目启动时已将 `app/` 加入 Python path，全部 Model 统一用 `from extensions import db`；`from app.extensions import db` 是标准 Flask 惯例但在本项目会与现有所有 Model 不一致，是 AI 新建 Model 时的高频笔误；grep `from app.extensions` 全文不应有匹配 |
+| 冒烟测试写 `flask shell -c "..."` | Flask 的 `shell` 子命令**无 `-c` 选项**，执行时报 `Got unexpected extra arguments`。正确方式：`backend/.venv/Scripts/python << 'EOF' ... EOF`，在脚本内手动 `create_app()` + `with app.app_context():` |
+| curl POST 到 Blueprint `'/'` 路由时漏掉尾部斜杠 | Flask `strict_slashes=True` 默认：POST `/api/projects` 会被 308 重定向到 `/api/projects/`，curl 不自动追踪 POST 重定向 → 请求体丢失，静默失败。**curl 冒烟脚本中 POST / GET-list 路由必须加尾部斜杠** |
 
 ---
 
@@ -450,3 +455,4 @@ db.session.commit()
 | 2026-05-11 | Phase 1 Step 1-0-1：补全 `Doc/04_api_spec.md` §1.1（9 端点）与 §1.2（6 端点 + seal/unseal 草案），新增 `Doc/05_permissions.md` §五（项目与批次端点 @require_role 映射表及前端 permissions.js 派生规则）；同步修正 prompt.txt 路径与 maxLength 错误 | Claude |
 | 2026-05-13 | Phase 1 Step 1-1-3 实战补入：§h 新增 2 条风险行（测试 JWT token 缺 additional_claims 导致 @require_role 静默 403、`Model.query.get()` 废弃 API）；Doc/09_dev_rules.md 后端 #11 补 `db.session.get()` 规则 + Checklist 新增 1 项；Doc/PROMPT_TEMPLATES.md T07 修正 conftest 模板（db.sessionmaker → sqlalchemy.orm 正确导入、补 _original_session 还原与 try/finally、补 additional_claims 说明、Step 5 覆盖率命令改为 coverage run） | Claude |
 | 2026-05-14 | Phase 1 Step 1-3-1 实战补入：§h 新增 1 条风险行（Model import 路径 `from app.extensions import db` 笔误）；Doc/09_dev_rules.md 后端 #11 追加 import 路径子条；Doc/PROMPT_TEMPLATES.md T01 Step 2 追加 import 提示 | Claude |
+| 2026-05-14 | Phase 1 全部完成（Step 1-0-1 ~ 1-5-2）：项目模块 / 模板快照 / 批次模块 / 封存解封规约文档化 / 端到端冒烟 5 条全 PASS；§c 切换至 Phase 2；§h 新增 2 条风险行（`flask shell -c` 无效 / curl POST 尾部斜杠） | Claude |

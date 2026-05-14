@@ -13,6 +13,8 @@ from extensions import db, scheduler         # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.models.role import Role  # noqa: E402
 from app.models.project import Project  # noqa: E402
+from app.models.fixture_template import FixtureTemplate  # noqa: E402
+from app.models.fixture_template_snapshot import FixtureTemplateSnapshot  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -136,6 +138,35 @@ def seeded_project(db_session, seeded_pm_user):
     db_session.add(project)
     db_session.flush()
     return project
+
+
+@pytest.fixture
+def seeded_templates(db_session):
+    """工厂 fixture：向 fixture_templates 插入测试模板，返回列表。
+    计数器保证同一测试内多次调用时 code 唯一。
+    is_active=True 为默认，测试内如需 False 可直接修改后 flush。
+    """
+    _counter = [0]
+
+    def _factory(product_type='SUS_VC', count=5):
+        templates = []
+        for _ in range(count):
+            t = FixtureTemplate(
+                code=f'TST-{_counter[0]:04d}',
+                name=f'测试模板 {_counter[0]:04d}',
+                process_step='测试工序',
+                applicable_products=product_type,
+                default_lt_days=30,
+                is_attachment=False,
+                is_active=True,
+            )
+            db_session.add(t)
+            templates.append(t)
+            _counter[0] += 1
+        db_session.flush()
+        return templates
+
+    return _factory
 
 
 @pytest.fixture

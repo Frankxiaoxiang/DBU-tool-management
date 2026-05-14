@@ -3,6 +3,7 @@
     <el-aside width="200px">
       <el-menu default-active="/" router>
         <el-menu-item index="/">首页</el-menu-item>
+        <el-menu-item index="/projects">项目管理</el-menu-item>
       </el-menu>
     </el-aside>
     <el-container>

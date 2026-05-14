@@ -123,7 +123,7 @@
 🟢 进行中 | 详细参数见 [TASKS_Phase1_detail.md](./TASKS_Phase1_detail.md)（共 19 个 Step，5 个子模块）
 
 > **建议执行顺序**：1-0-1 → 1-1-1 → 1-1-2 → 1-1-3 → 1-2-1 → 1-2-2 → 1-2-3 → 1-1-4 → 1-1-5 → 1-2-4 → 1-3-1 → 1-3-2 → 1-3-3 → 1-3-4 → 1-3-5 → 1-4-1 →（决策点）→ 1-4-2 → 1-5-1 → 1-5-2
-> **当前进行到**：Step 1-1-4（未开始）
+> **当前进行到**：Step 1-3-1（未开始）
 
 ### 1.0 准备（1 步）
 
@@ -134,15 +134,15 @@
 - [x] **1-1-1** Project Model + Migration（T01）— 2026-05-12
 - [x] **1-1-2** project_service + Blueprint（T02）含 code_generator.generate_project_code() — 2026-05-12
 - [x] **1-1-3** project_service 单元测试（T07）— 2026-05-13
-- [ ] **1-1-4** ProjectList 前端列表页（T03）含 utils/status.js 初建
-- [ ] **1-1-5** ProjectForm 前端表单页，create/edit/detail 三合一（T04）
+- [x] **1-1-4** ProjectList 前端列表页（T03）含 utils/status.js 初建 — 2026-05-14
+- [x] **1-1-5** ProjectForm 前端表单页，create/edit/detail 三合一（T04）— 2026-05-14
 
 ### 1.2 模板快照机制（4 步）
 
 - [x] **1-2-1** FixtureTemplateSnapshot Model + Migration（T01）— 2026-05-13
 - [x] **1-2-2** snapshot_service + 集成 project_service.create_project + /sync-templates 端点（T02）— 2026-05-13
 - [x] **1-2-3** snapshot_service 单元测试（T07）— 2026-05-14
-- [ ] **1-2-4** ProjectForm/Detail "追加同步模板"按钮（T04 扩展）
+- [x] **1-2-4** ProjectForm/Detail "追加同步模板"按钮（T04 扩展）— 2026-05-14
 
 ### 1.3 批次模块（5 步）
 
@@ -263,3 +263,6 @@
 | 2026-05-10 | Phase 0.6 完成：Vue 3 + ElementPlus + Pinia + Router 项目初始化、utils/storage.js token 封装、parseBackendTime 工具、axios 401/409 拦截器、登录/主框架/Home/NotFound 视图、eslint 拦截规则（dayjs 裸调 + @/ 路径）；pnpm build 编译通过；eslint 拦截验证通过；联调登录冒烟测试通过 | Claude |
 | 2026-05-10 | Phase 0.7 进行中：联调登录通过；TASKS.md / CLAUDE.md 更新进度同步 | Claude |
 | 2026-05-10 | Phase 0 全部完成：0.2 生产机预演 9 项 + 0.7 CI(.github/workflows/ci.yml) + 团队 review 全部勾选；当前阶段切换至 Phase 1 | Frank |
+| 2026-05-14 | Phase 1 Step 1-1-4 完成：ProjectList.vue + api/project.js + utils/status.js（project 状态映射 + PRODUCT_TYPE_MAP）+ 路由 4 条；pnpm build 通过 | Claude |
+| 2026-05-14 | Phase 1 Step 1-1-5 完成：ProjectForm.vue（create/edit/detail 三合一）+ api/project.js 追加 4 函数（getProjectById/createProject/updateProject/transferOwner）；路由重排（new→:id/edit→:id）；pnpm build 通过 | Claude |
+| 2026-05-14 | Phase 1 Step 1-2-4 完成：ProjectForm.vue detail 模式追加同步模板库按钮（hasPermission 控制 + ElMessageBox 二段 try/catch + added_count toast）；api/project.js 追加 syncProjectTemplates；pnpm build 通过 | Claude |

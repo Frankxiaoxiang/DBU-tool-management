@@ -19,6 +19,31 @@ const routes = [
         name: 'Home',
         component: () => import('../views/Home.vue'),
       },
+      {
+        path: 'projects',
+        name: 'ProjectList',
+        component: () => import('../views/project/ProjectList.vue'),
+      },
+      {
+        // 注意：/projects/new 必须在 /projects/:id 之前，
+        // 否则字符串 'new' 会被匹配为 :id 参数值导致详情页 404
+        path: 'projects/new',
+        name: 'ProjectCreate',
+        component: () => import('../views/project/ProjectForm.vue'),
+        meta: { mode: 'create' },
+      },
+      {
+        path: 'projects/:id/edit',
+        name: 'ProjectEdit',
+        component: () => import('../views/project/ProjectForm.vue'),
+        meta: { mode: 'edit' },
+      },
+      {
+        path: 'projects/:id',
+        name: 'ProjectDetail',
+        component: () => import('../views/project/ProjectForm.vue'),
+        meta: { mode: 'detail' },
+      },
     ],
   },
   {

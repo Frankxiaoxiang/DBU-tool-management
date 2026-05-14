@@ -44,6 +44,38 @@ const routes = [
         component: () => import('../views/project/ProjectForm.vue'),
         meta: { mode: 'detail' },
       },
+      // ── 批次模块 ──────────────────────────────────────
+      {
+        // 场景 A：从项目详情进入，project_id 由 projectId 参数传入，隐藏项目下拉
+        path: 'projects/:projectId/batches',
+        name: 'ProjectBatchList',
+        component: () => import('../views/batch/BatchList.vue'),
+      },
+      {
+        // 场景 B：独立访问，搜索栏显示项目下拉
+        path: 'batches',
+        name: 'BatchList',
+        component: () => import('../views/batch/BatchList.vue'),
+      },
+      {
+        // 注意：batches/new 必须在 batches/:id 之前，防止 'new' 被动态参数捕获
+        path: 'batches/new',
+        name: 'BatchCreate',
+        component: () => import('../views/batch/BatchForm.vue'),
+        meta: { mode: 'create' },
+      },
+      {
+        path: 'batches/:id',
+        name: 'BatchDetail',
+        component: () => import('../views/batch/BatchForm.vue'),
+        meta: { mode: 'detail' },
+      },
+      {
+        path: 'batches/:id/edit',
+        name: 'BatchEdit',
+        component: () => import('../views/batch/BatchForm.vue'),
+        meta: { mode: 'edit' },
+      },
     ],
   },
   {

@@ -13,6 +13,7 @@ from extensions import db, scheduler         # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.models.role import Role  # noqa: E402
 from app.models.project import Project  # noqa: E402
+from app.models.batch import Batch  # noqa: E402
 from app.models.fixture_template import FixtureTemplate  # noqa: E402
 from app.models.fixture_template_snapshot import FixtureTemplateSnapshot  # noqa: E402
 
@@ -167,6 +168,51 @@ def seeded_templates(db_session):
         return templates
 
     return _factory
+
+
+@pytest.fixture
+def seeded_project_with_snapshot(db_session, seeded_pm_user, seeded_templates):
+    """激活态项目，附带 1 条 FixtureTemplateSnapshot 记录（供批次创建的快照前置校验使用）。"""
+    project = Project(
+        project_code='SNAP',
+        project_name='有快照项目',
+        product_type='SUS_VC',
+        project_owner_id=seeded_pm_user.id,
+        status='active',
+        created_by=seeded_pm_user.id,
+        version=0,
+    )
+    db_session.add(project)
+    db_session.flush()
+    templates = seeded_templates(product_type='SUS_VC', count=1)
+    template = templates[0]
+    snapshot = FixtureTemplateSnapshot(
+        project_id=project.id,
+        source_template_id=template.id,
+        fixture_type_code=template.code,
+        product_type=template.applicable_products,
+        synced_by=seeded_pm_user.id,
+    )
+    db_session.add(snapshot)
+    db_session.flush()
+    return project
+
+
+@pytest.fixture
+def seeded_manual_batch(db_session, seeded_project_with_snapshot, seeded_pm_user):
+    """seeded_project_with_snapshot 下的 manual_init 批次（status='draft'，直接插 Model 跳过 service）。"""
+    batch = Batch(
+        project_id=seeded_project_with_snapshot.id,
+        batch_no=f'{seeded_project_with_snapshot.project_code}-M0-1',
+        batch_type='manual_init',
+        flow_path='full',
+        status='draft',
+        created_by=seeded_pm_user.id,
+        version=0,
+    )
+    db_session.add(batch)
+    db_session.flush()
+    return batch
 
 
 @pytest.fixture

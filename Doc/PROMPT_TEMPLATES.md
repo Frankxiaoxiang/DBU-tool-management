@@ -263,6 +263,7 @@ T00 不产出代码,验收即"报告 6 段完整 + 5 条 grep 输出 = 0 违规"
      - 改字段类型若有数据丢失风险(缩窄长度 / 类型变更),需提供数据迁移策略
    - 加 `__table_args__` utf8mb4
    - 若涉及多对多关联表,用 `db.Table()` **显式**传 charset + collate
+   - **import 语句必须用 `from extensions import db`**（不得写 `from app.extensions import db`；本项目已将 `app/` 加入 Python path，全部现有 Model 统一用前者）
 
 **Step 3 — 导出 Model**:
    在 `backend/app/models/__init__.py` 中 `from .[entity_filename] import [Entity_Name]`
@@ -1783,3 +1784,4 @@ Step 6 — 整理交付
 | 2026-05-11 | 第二轮整合 CLI AI 评审建议:① 顶部"使用规则"加第 5 条 Git Bash 环境要求;② T01 适用场景扩展至"新建表 + 字段变更",Step 2/5 措辞同步;③ T02 Blueprint 注册位置改为 `blueprints/__init__.py:register_blueprints(app)`(对齐项目实际结构);④ T03 axios 导入路径 `./request`;⑤ T03 文档约束第 3 条补 `utils/status.js` 前置说明;⑥ T05 文档约束第 5 条 trigger 取值表解耦,改为引用 `04_api_spec.md` 单一来源;⑦ T07 文档约束第 3 条改为"真 MySQL 测试库 + nested transaction + savepoint"模式(技术修正:简单 rollback 在 Service 内 commit 时不够),并新增"MVP 极简依赖"独立成第 4 条,JWT identity / send_alert_dedup mock / 文件命名顺延至 5-7 条;⑧ 新增 T00 会话启动与上下文同步模板,作为每次新 CLI 会话第一条强制运行。 | Claude |
 | 2026-05-11 | 第三轮勘误:① T00 铁律复述计数修正：删去错误的"19+4+8=31 条"，改为"§d+§e 共 26 条；09_dev_rules.md 后端 11+前端 8 由各模板验收防线 grep 覆盖"；② T02 Blueprint 注册路径纠偏：`blueprints/__init__.py:register_blueprints(app)` 实为空文件不存在该函数，改回 `app/__init__.py` `create_app()` ⑤处直接 register_blueprint（与 auth_bp 现有写法一致）；同步修正断点文本与完工汇报格式。 | Claude |
 | 2026-05-13 | Phase 1 Step 1-1-3 实战修正 T07：① conftest 模板修正（`db.sessionmaker`/`db.scoped_session` 不存在，改为 `from sqlalchemy.orm import sessionmaker, scoped_session`）；② 补 `_original_session` 保存/还原与 `try/finally`（防用例失败时连接未归还）；③ 文档约束第 5 条补 `additional_claims={'role_codes': [...]}` 必须与 `@require_role` 对齐（缺失时正向用例全返 403 且无明显报错）；④ Step 5 覆盖率命令改为 `coverage run -m pytest`（`pytest --cov` 与 PyO3/cryptography 包冲突）。 | Claude |
+| 2026-05-14 | Phase 1 Step 1-3-1 实战修正 T01：Step 2 追加 import 路径提示——必须用 `from extensions import db`，不得写 `from app.extensions import db`（本项目已将 `app/` 加入 Python path，AI 新建 Model 时的高频笔误）。 | Claude |

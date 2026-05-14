@@ -66,7 +66,8 @@
 
 - **必须**：`SQLALCHEMY_ENGINE_OPTIONS` 配 `pool_pre_ping=True`、`pool_recycle=3600`、`pool_size=10`、`max_overflow=20`；连接串含 `?charset=utf8mb4`；`init_command="SET time_zone='+08:00'"`。
 - **必须**：多对多关联表 `db.Table('xxx', ...)` 显式传 `mysql_charset='utf8mb4'` + `mysql_collate='utf8mb4_unicode_ci'`（关联表不走 Model 的 `__table_args__`，生产 MySQL server 默认非 utf8mb4 时会建出错误 charset 的表）。
-- **必须**：主键查询用 SQLAlchemy 2.x 新 API `db.session.get(Model, pk)`，**禁止**使用废弃写法 `Model.query.get(pk)`（产生 `LegacyAPIWarning`，SQLAlchemy 3.x 将彻底移除）。
+- **必须**：主键查询用 SQLAlchemy 2.x 新 API `db.session.get(Model, pk)`，**禁止**使用废弃写法 `Model.query.get(pk)`（产生 `LegacyAPIWarning`，SQLAlchemy 3.x 将彻底移除）
+- **必须**：Model 文件 import 语句用 `from extensions import db`（**不得**写 `from app.extensions import db`）；本项目启动时已将 `app/` 加入 Python path，`from extensions import db` 是全部现有 Model 的统一写法；误写 `from app.extensions` 是高频 AI 笔误，grep 全文不应有匹配。
 ```python
 # ✅ SQLAlchemy 2.x 正确写法
 project = db.session.get(Project, project_id)
@@ -221,3 +222,4 @@ rules: {
 |------|------|--------|
 | 2026-05-10 | Phase 0.5 落位：① 路径修正（全文 `docs/` 显示文本统一为 `Doc/` 共 7 处）；② 内容对齐 CLAUDE.md 2026-04-29 修订——后端 #1 补 dotenv 顺序、#7 补 `StaleDataError` 2.x 路径、#11 补 `db.Table()` 关联表 charset、命名约定表新增"自定义异常类"行、Checklist 后端段新增 4 项核对 | Claude |
 | 2026-05-13 | Phase 1 Step 1-1-3 实战补入：后端 #11 标题扩为"连接池参数与 ORM API"，新增 `db.session.get(Model, pk)` 替代废弃 `Model.query.get(pk)` 规则（附代码示例）；Checklist 后端段新增 1 项核对 | Claude |
+| 2026-05-14 | Phase 1 Step 1-3-1 实战补入：后端 #11 新增 `from extensions import db` import 路径子条（`from app.extensions import db` 是本项目高频 AI 笔误） | Claude |

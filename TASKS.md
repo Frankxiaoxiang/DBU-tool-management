@@ -123,7 +123,7 @@
 🟢 进行中 | 详细参数见 [TASKS_Phase1_detail.md](./TASKS_Phase1_detail.md)（共 19 个 Step，5 个子模块）
 
 > **建议执行顺序**：1-0-1 → 1-1-1 → 1-1-2 → 1-1-3 → 1-2-1 → 1-2-2 → 1-2-3 → 1-1-4 → 1-1-5 → 1-2-4 → 1-3-1 → 1-3-2 → 1-3-3 → 1-3-4 → 1-3-5 → 1-4-1 →（决策点）→ 1-4-2 → 1-5-1 → 1-5-2
-> **当前进行到**：Step 1-3-2（未开始）
+> **当前进行到**：Step 1-3-3（未开始）
 
 ### 1.0 准备（1 步）
 
@@ -147,7 +147,7 @@
 ### 1.3 批次模块（5 步）
 
 - [x] **1-3-1** Batch Model + Migration（T01）含 4 种批次类型字段 — 2026-05-14
-- [ ] **1-3-2** batch_service + Blueprint（T02）含批次类型业务规则 + batch_no 自动生成
+- [x] **1-3-2** batch_service + Blueprint（T02）含批次类型业务规则 + batch_no 自动生成 — 2026-05-14
 - [ ] **1-3-3** batch_service 单元测试（T07）含 4 种类型规则违反用例
 - [ ] **1-3-4** BatchList 前端列表页（T03）
 - [ ] **1-3-5** BatchForm 前端表单页（T04）含批次类型联动校验
@@ -267,3 +267,4 @@
 | 2026-05-14 | Phase 1 Step 1-1-5 完成：ProjectForm.vue（create/edit/detail 三合一）+ api/project.js 追加 4 函数（getProjectById/createProject/updateProject/transferOwner）；路由重排（new→:id/edit→:id）；pnpm build 通过 | Claude |
 | 2026-05-14 | Phase 1 Step 1-2-4 完成：ProjectForm.vue detail 模式追加同步模板库按钮（hasPermission 控制 + ElMessageBox 二段 try/catch + added_count toast）；api/project.js 追加 syncProjectTemplates；pnpm build 通过 | Claude |
 | 2026-05-14 | Phase 1 Step 1-3-1 完成：Batch Model（batches 表，core，version 手动乐观锁，自引用 parent_batch_id）+ Migration e8be6b7b1373 upgrade 通过，SHOW CREATE TABLE 确认 utf8mb4；3 处偏差已修正（import 路径 / datetime 改 db.func.now() / __all__ 追加 Batch） | Claude |
+| 2026-05-14 | Phase 1 Step 1-3-2 完成：batch_service（7函数：list/get/create/update/cancel/_safe_transition/_generate_batch_no）+ batches Blueprint（7端点，含2个占位）+ 批次类型4条业务规则全部落实 + urgency_flag + batch_no 自动生成；api_spec.md §1.2 同步更新3处（batch_no 改只读/expected_date/初始status=draft）+ 新增 GET /api/batches；注册 Blueprint；烟测 7 用例全部通过 | Claude |

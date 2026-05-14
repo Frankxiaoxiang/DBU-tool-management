@@ -420,6 +420,7 @@ db.session.commit()
 | 自定义业务异常类与 Python 内置名冲突（如 `PermissionError`、`ValueError`、`TypeError`、`NotImplementedError`） | HTTP 403 用 `ForbiddenError`；422 用 `UnprocessableError` 或自定义 `ValidationError`；全文搜 `class PermissionError` / `class ValueError` 等内置名必须无匹配 |
 | 测试 JWT token 缺 `additional_claims={'role_codes': [...]}` → `@require_role` 静默返回 403，**正向用例全挂且无明显报错** | 写 conftest 时 grep `create_access_token`，确认每处均含 `additional_claims`；`require_role` 从 JWT claims 读 role_codes，不查 DB |
 | Service 代码用废弃 API `Model.query.get(pk)` | SQLAlchemy 2.x 起改用 `db.session.get(Model, pk)`；旧写法产生 `LegacyAPIWarning`，grep `\.query\.get(` 全文不应有匹配 |
+| Model 文件 import 写成 `from app.extensions import db` | 本项目启动时已将 `app/` 加入 Python path，全部 Model 统一用 `from extensions import db`；`from app.extensions import db` 是标准 Flask 惯例但在本项目会与现有所有 Model 不一致，是 AI 新建 Model 时的高频笔误；grep `from app.extensions` 全文不应有匹配 |
 
 ---
 
@@ -448,3 +449,4 @@ db.session.commit()
 | 2026-05-11 | §b 关键文档导航表新增 Doc/PROMPT_TEMPLATES.md 索引行（CLI AI 协作提示词模板库 T00~T07） | Claude |
 | 2026-05-11 | Phase 1 Step 1-0-1：补全 `Doc/04_api_spec.md` §1.1（9 端点）与 §1.2（6 端点 + seal/unseal 草案），新增 `Doc/05_permissions.md` §五（项目与批次端点 @require_role 映射表及前端 permissions.js 派生规则）；同步修正 prompt.txt 路径与 maxLength 错误 | Claude |
 | 2026-05-13 | Phase 1 Step 1-1-3 实战补入：§h 新增 2 条风险行（测试 JWT token 缺 additional_claims 导致 @require_role 静默 403、`Model.query.get()` 废弃 API）；Doc/09_dev_rules.md 后端 #11 补 `db.session.get()` 规则 + Checklist 新增 1 项；Doc/PROMPT_TEMPLATES.md T07 修正 conftest 模板（db.sessionmaker → sqlalchemy.orm 正确导入、补 _original_session 还原与 try/finally、补 additional_claims 说明、Step 5 覆盖率命令改为 coverage run） | Claude |
+| 2026-05-14 | Phase 1 Step 1-3-1 实战补入：§h 新增 1 条风险行（Model import 路径 `from app.extensions import db` 笔误）；Doc/09_dev_rules.md 后端 #11 追加 import 路径子条；Doc/PROMPT_TEMPLATES.md T01 Step 2 追加 import 提示 | Claude |

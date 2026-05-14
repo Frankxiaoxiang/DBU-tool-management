@@ -137,6 +137,7 @@
 | `/api/projects/:id/gantt` | GET | 任意已登录用户 | 只读甘特图 |
 | `/api/projects/:id/sync-templates` | POST | `super_admin` | 模板库变更追加快照，仅超管 |
 | `/api/projects/export` | GET | 任意已登录用户 | 导出列表属只读操作 |
+| `/api/batches` | GET | 任意已登录用户 | 宽视图，全员可查 |
 | `/api/batches` | POST | `super_admin`, `pm` | 新建需求批次 |
 | `/api/batches/:id` | GET | 任意已登录用户 | 宽视图 |
 | `/api/batches/:id` | PUT | `super_admin`, `pm` | 编辑批次 |

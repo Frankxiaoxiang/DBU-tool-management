@@ -418,6 +418,52 @@
 
 ---
 
+#### GET /api/batches
+
+**说明**：批次列表，支持按项目 / 批次类型 / 状态过滤与分页
+**Auth**：Bearer access token（任意已登录用户）
+
+**Query Params**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `project_id` | int | 否 | 按项目 ID 过滤 |
+| `batch_type` | string | 否 | 枚举：见 batch_type 枚举表 |
+| `status` | string | 否 | 枚举：`draft` / `active` / `sealed` / `cancelled` |
+| `page` | int | 否 | 默认 1 |
+| `per_page` | int | 否 | 默认 20，上限 100 |
+
+**响应 200**
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "items": [
+      {
+        "id": 10,
+        "project_id": 1,
+        "batch_no": "SUS01-M0-1",
+        "batch_type": "manual_init",
+        "flow_path": "full",
+        "status": "draft",
+        "expected_date": "2026-12-31",
+        "remark": "首批开模",
+        "created_by": 1,
+        "created_at": "2026-05-14T09:00:00+08:00",
+        "updated_at": "2026-05-14T09:00:00+08:00",
+        "version": 0
+      }
+    ],
+    "total": 5,
+    "page": 1,
+    "per_page": 20
+  }
+}
+```
+
+---
+
 #### POST /api/batches
 
 **说明**：在项目下新建需求批次
@@ -427,10 +473,8 @@
 ```json
 {
   "project_id": 1,
-  "batch_no": "B001",
   "batch_type": "manual_init",
-  "planned_start_date": "2026-06-01",
-  "planned_end_date": "2026-08-31",
+  "expected_date": "2026-12-31",
   "remark": "首批开模"
 }
 ```
@@ -438,11 +482,13 @@
 | 字段 | 类型 | 必填 | 约束 |
 |------|------|------|------|
 | `project_id` | int | 是 | 对应存在的项目 |
-| `batch_no` | string | 是 | VARCHAR(32)，同一项目内唯一 |
 | `batch_type` | string | 是 | 枚举，见上表 |
-| `planned_start_date` | string | 否 | 格式 `YYYY-MM-DD` |
-| `planned_end_date` | string | 否 | 格式 `YYYY-MM-DD` |
+| `parent_batch_id` | int | 条件必填 | addon 类型必填，manual_init / mass_prod 不允许传 |
+| `flow_path` | string | 否 | `full`（默认）或 `simplified`；manual_init / mass_prod 强制为 `full` |
+| `expected_date` | string | 否 | 格式 `YYYY-MM-DD` |
 | `remark` | string | 否 | 备注 |
+
+> ⚠️ `batch_no` 由后端自动生成（格式 `{project_code}-{batch_type_short}-{seq}`），**不允许**请求体传入。
 
 **响应 201**
 ```json
@@ -453,24 +499,26 @@
     "id": 10,
     "project_id": 1,
     "project_code": "SUS01",
-    "batch_no": "B001",
+    "batch_no": "SUS01-M0-1",
     "batch_type": "manual_init",
-    "status": "active",
-    "planned_start_date": "2026-06-01",
-    "planned_end_date": "2026-08-31",
-    "sealed_at": null,
-    "sealed_by": null,
+    "parent_batch_id": null,
+    "flow_path": "full",
+    "status": "draft",
+    "expected_date": "2026-12-31",
     "cancelled_reason": null,
     "cancelled_at": null,
     "cancelled_by": null,
     "remark": "首批开模",
     "created_by": 1,
-    "created_at": "2026-05-11T09:00:00+08:00",
-    "updated_at": "2026-05-11T09:00:00+08:00",
-    "version": 0
+    "created_at": "2026-05-14T09:00:00+08:00",
+    "updated_at": "2026-05-14T09:00:00+08:00",
+    "version": 0,
+    "fixture_count": 0
   }
 }
 ```
+
+> ⚠️ `mass_prod` 批次创建成功后，响应体额外包含 `"urgency_flag": true`（Phase 6 邮件告警接入前仅返回字段，不发邮件）。
 
 **错误响应**
 
@@ -498,20 +546,19 @@
     "id": 10,
     "project_id": 1,
     "project_code": "SUS01",
-    "batch_no": "B001",
+    "batch_no": "SUS01-M0-1",
     "batch_type": "manual_init",
-    "status": "active",
-    "planned_start_date": "2026-06-01",
-    "planned_end_date": "2026-08-31",
-    "sealed_at": null,
-    "sealed_by": null,
+    "parent_batch_id": null,
+    "flow_path": "full",
+    "status": "draft",
+    "expected_date": "2026-12-31",
     "cancelled_reason": null,
     "cancelled_at": null,
     "cancelled_by": null,
     "remark": "首批开模",
     "created_by": 1,
-    "created_at": "2026-05-11T09:00:00+08:00",
-    "updated_at": "2026-05-11T09:00:00+08:00",
+    "created_at": "2026-05-14T09:00:00+08:00",
+    "updated_at": "2026-05-14T09:00:00+08:00",
     "version": 2,
     "fixture_count": 0
   }
@@ -536,10 +583,8 @@
 **请求体**（所有业务字段可选，`version` 必填）
 ```json
 {
-  "batch_no": "B002",
-  "batch_type": "mass_prod",
-  "planned_start_date": "2026-07-01",
-  "planned_end_date": "2026-09-30",
+  "expected_date": "2026-09-30",
+  "flow_path": "simplified",
   "remark": "更新备注",
   "version": 2
 }
@@ -547,12 +592,12 @@
 
 | 字段 | 类型 | 必填 | 约束 |
 |------|------|------|------|
-| `batch_no` | string | 否 | VARCHAR(32)，同项目内唯一 |
-| `batch_type` | string | 否 | 枚举，见 §1.2 枚举表 |
-| `planned_start_date` | string | 否 | 格式 `YYYY-MM-DD` |
-| `planned_end_date` | string | 否 | 格式 `YYYY-MM-DD` |
+| `expected_date` | string | 否 | 格式 `YYYY-MM-DD` |
+| `flow_path` | string | 否 | `full` 或 `simplified` |
 | `remark` | string | 否 | 备注 |
 | `version` | int | **是** | 乐观锁版本号 |
+
+> ⚠️ `batch_no` 和 `batch_type` 创建后不可修改（auto-generated）。
 
 **响应 200**
 ```json

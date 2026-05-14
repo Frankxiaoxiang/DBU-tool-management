@@ -61,6 +61,9 @@ def create_app(config_name=None):
     from app.blueprints.projects import projects_bp
     app.register_blueprint(projects_bp, url_prefix='/api/projects')
 
+    from app.blueprints.batches import batch_bp
+    app.register_blueprint(batch_bp, url_prefix='/api/batches')
+
     # ⑥ 全局 errorhandler
     _register_error_handlers(app)
 

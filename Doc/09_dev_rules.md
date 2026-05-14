@@ -62,10 +62,19 @@
 - **必须**：`create_app()` 中配置 `TimedRotatingFileHandler`，按天切割，`backupCount=30`；NSSM 的 stdout/stderr 仅作为兜底（配 10MB 切割）。
 - **禁止**：依赖 NSSM 单一文件做长期日志记录；用 `print` 代替 logger。
 
-### 后端 #11：连接池参数
+### 后端 #11：连接池参数与 ORM API
 
 - **必须**：`SQLALCHEMY_ENGINE_OPTIONS` 配 `pool_pre_ping=True`、`pool_recycle=3600`、`pool_size=10`、`max_overflow=20`；连接串含 `?charset=utf8mb4`；`init_command="SET time_zone='+08:00'"`。
 - **必须**：多对多关联表 `db.Table('xxx', ...)` 显式传 `mysql_charset='utf8mb4'` + `mysql_collate='utf8mb4_unicode_ci'`（关联表不走 Model 的 `__table_args__`，生产 MySQL server 默认非 utf8mb4 时会建出错误 charset 的表）。
+- **必须**：主键查询用 SQLAlchemy 2.x 新 API `db.session.get(Model, pk)`，**禁止**使用废弃写法 `Model.query.get(pk)`（产生 `LegacyAPIWarning`，SQLAlchemy 3.x 将彻底移除）。
+```python
+# ✅ SQLAlchemy 2.x 正确写法
+project = db.session.get(Project, project_id)
+owner   = db.session.get(User, owner_id)
+
+# ❌ 废弃 API — 触发 LegacyAPIWarning
+project = Project.query.get(project_id)
+```
 - **禁止**：使用默认连接池配置（MySQL `wait_timeout=28800` 后连接假死）；忽略 charset 设置（中文乱码）。
 
 ---
@@ -180,6 +189,7 @@ rules: {
 - [ ] 多对多关联表 `db.Table(...)` 是否显式传 `mysql_charset='utf8mb4'` + `mysql_collate='utf8mb4_unicode_ci'`？
 - [ ] `StaleDataError` 导入路径是否为 `from sqlalchemy.orm.exc`（而非 `sqlalchemy.exc`）？
 - [ ] 自定义异常类是否避开 Python 内置异常名（`grep -RIn "class PermissionError\|class ValueError\|class TypeError\|class NotImplementedError"` 应无匹配）？
+- [ ] 主键查询是否用 `db.session.get(Model, pk)` 而非废弃的 `Model.query.get(pk)`（`grep -RIn "\.query\.get(" app/services/` 应无匹配）？
 
 ### 前端
 
@@ -210,3 +220,4 @@ rules: {
 | 日期 | 内容 | 操作人 |
 |------|------|--------|
 | 2026-05-10 | Phase 0.5 落位：① 路径修正（全文 `docs/` 显示文本统一为 `Doc/` 共 7 处）；② 内容对齐 CLAUDE.md 2026-04-29 修订——后端 #1 补 dotenv 顺序、#7 补 `StaleDataError` 2.x 路径、#11 补 `db.Table()` 关联表 charset、命名约定表新增"自定义异常类"行、Checklist 后端段新增 4 项核对 | Claude |
+| 2026-05-13 | Phase 1 Step 1-1-3 实战补入：后端 #11 标题扩为"连接池参数与 ORM API"，新增 `db.session.get(Model, pk)` 替代废弃 `Model.query.get(pk)` 规则（附代码示例）；Checklist 后端段新增 1 项核对 | Claude |

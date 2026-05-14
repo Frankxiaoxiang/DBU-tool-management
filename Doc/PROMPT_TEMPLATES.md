@@ -1576,26 +1576,40 @@ Step 7 — 文档同步:
      * **方案 B — flask db upgrade 测试库 + 用例级 nested transaction**(更贴近生产,推荐 Phase 7 上线前切换)
    - **每个测试用例必须完全隔离**——简单 `db.session.rollback()` **不够**(若被测 Service 内部有 `db.session.commit()`,后续测试会看到脏数据)。**正确做法**:把每个用例包在 **connection-level transaction + nested savepoint** 里,无论被测代码 commit 多少次,用例结束统一回滚整个外层 transaction。参考 conftest 模板:
      ```python
-     @pytest.fixture
+     from sqlalchemy.orm import sessionmaker, scoped_session  # ← 必须从 sqlalchemy.orm 直接导入
+                                                               #   db.sessionmaker / db.scoped_session 不存在
+     @pytest.fixture(scope='function')
      def db_session(app):
          """SQLAlchemy 2.x: nested transaction + savepoint,
-            被测代码内的 commit 只清空 savepoint,外层 transaction 仍可 rollback。"""
+            被测代码内的 commit 只清空 savepoint,外层 transaction 仍可 rollback。
+            用例结束后还原 db.session，避免污染后续用例。"""
          with app.app_context():
              connection = db.engine.connect()
              transaction = connection.begin()
-             db.session = db.scoped_session(
-                 db.sessionmaker(bind=connection, join_transaction_mode='create_savepoint')
+             _original_session = db.session          # 保存原始 session，用例结束后还原
+             db.session = scoped_session(
+                 sessionmaker(bind=connection, join_transaction_mode='create_savepoint')
              )
-             yield db.session
-             db.session.remove()
-             transaction.rollback()
-             connection.close()
+             try:
+                 yield db.session
+             finally:
+                 db.session.remove()
+                 db.session = _original_session      # 还原，防止后续用例拿到已关闭的连接
+                 transaction.rollback()
+                 connection.close()
      ```
    - **禁止**:直接在 fixture 里 `db.drop_all()` 然后 `db.create_all()`(慢且会污染并发测试);用单个共享 session 跑全部测试(用例间脏数据互串)
 
 4. **MVP 极简依赖**:**禁止**引入 `factory_boy` / `faker` / `pytest-factoryboy` / `mimesis` 等新测试库;用 `pytest.fixture` 手写 seed 数据足够,后续如需再走架构评审
 
-5. **CLAUDE.md §d Rule 4**:`get_jwt_identity()` 返回 str,JWT fixture 创建 token 时 identity 传 str(`create_access_token(identity=str(user_id))`),Service 内取出后 `int(...)`
+5. **CLAUDE.md §d Rule 4 + @require_role 对齐**:`get_jwt_identity()` 返回 str,JWT fixture 创建 token 时 identity 传 str；**同时必须加 `additional_claims={'role_codes': [...]}`**，否则 `@require_role` 读取 claims 时 role_codes 为空列表，所有需要角色的端点静默返回 403，正向测试全挂且**无明显报错**：
+   ```python
+   # ✅ 正确 — identity str + additional_claims 同时传
+   create_access_token(identity=str(user.id), additional_claims={'role_codes': ['pm']})
+
+   # ❌ 错误 — 缺 additional_claims，require_role 永远 403
+   create_access_token(identity=str(user.id))
+   ```
 
 6. **CLAUDE.md §e.9**:`send_alert_dedup` 测试时必须 patch SMTP(`mocker.patch('flask_mail.Mail.send')`),断言失败不抛出,断言去重表 / 日志被正确记录
 
@@ -1655,7 +1669,11 @@ Step 7 — 文档同步:
    - 若失败,逐个分析:被测代码 bug → 走 T06;测试 bug → 改测试
 
 **Step 5 — 覆盖率**(可选,有 coverage 工具时):
-   - `pytest --cov=app.services.<被测模块> [测试文件路径]`
+   - **注意**:`pytest --cov` 在本项目会与 `cryptography`（PyO3 编译）冲突，改用：
+     ```bash
+     coverage run -m pytest [测试文件路径]
+     coverage report --include="app/services/<被测模块>.py" --show-missing
+     ```
    - 报告覆盖率,目标 ≥ 80%(关键写路径 100%)
 
 ## 【⛔ 动作纪律 — 在此处打断点】
@@ -1764,3 +1782,4 @@ Step 6 — 整理交付
 | 2026-05-11 | 初版:T01-T07 共 7 个模板,每模板含适用场景 / 参数清单 / 提示词正文(含【文档约束】【开发动作】【⛔ 动作纪律】【验收防线】4 段)/ 使用示例。所有铁律直接引用 CLAUDE.md §d/§e/§h 与 09_dev_rules.md 后端 11 条 + 前端 8 条 + Checklist。技术栈固定 Flask 3 / SQLAlchemy 2.x / Vue 3 / Element Plus / Pinia,不得引入其他库。 | Claude |
 | 2026-05-11 | 第二轮整合 CLI AI 评审建议:① 顶部"使用规则"加第 5 条 Git Bash 环境要求;② T01 适用场景扩展至"新建表 + 字段变更",Step 2/5 措辞同步;③ T02 Blueprint 注册位置改为 `blueprints/__init__.py:register_blueprints(app)`(对齐项目实际结构);④ T03 axios 导入路径 `./request`;⑤ T03 文档约束第 3 条补 `utils/status.js` 前置说明;⑥ T05 文档约束第 5 条 trigger 取值表解耦,改为引用 `04_api_spec.md` 单一来源;⑦ T07 文档约束第 3 条改为"真 MySQL 测试库 + nested transaction + savepoint"模式(技术修正:简单 rollback 在 Service 内 commit 时不够),并新增"MVP 极简依赖"独立成第 4 条,JWT identity / send_alert_dedup mock / 文件命名顺延至 5-7 条;⑧ 新增 T00 会话启动与上下文同步模板,作为每次新 CLI 会话第一条强制运行。 | Claude |
 | 2026-05-11 | 第三轮勘误:① T00 铁律复述计数修正：删去错误的"19+4+8=31 条"，改为"§d+§e 共 26 条；09_dev_rules.md 后端 11+前端 8 由各模板验收防线 grep 覆盖"；② T02 Blueprint 注册路径纠偏：`blueprints/__init__.py:register_blueprints(app)` 实为空文件不存在该函数，改回 `app/__init__.py` `create_app()` ⑤处直接 register_blueprint（与 auth_bp 现有写法一致）；同步修正断点文本与完工汇报格式。 | Claude |
+| 2026-05-13 | Phase 1 Step 1-1-3 实战修正 T07：① conftest 模板修正（`db.sessionmaker`/`db.scoped_session` 不存在，改为 `from sqlalchemy.orm import sessionmaker, scoped_session`）；② 补 `_original_session` 保存/还原与 `try/finally`（防用例失败时连接未归还）；③ 文档约束第 5 条补 `additional_claims={'role_codes': [...]}` 必须与 `@require_role` 对齐（缺失时正向用例全返 403 且无明显报错）；④ Step 5 覆盖率命令改为 `coverage run -m pytest`（`pytest --cov` 与 PyO3/cryptography 包冲突）。 | Claude |

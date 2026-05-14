@@ -3,7 +3,8 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from app.exceptions import ValidationError
 from app.utils.decorators import require_role
-from app.utils.response import error_response, success_response
+from app.utils.response import success_response
+from app.services.snapshot_service import sync_missing_templates
 import app.services.project_service as project_service
 
 projects_bp = Blueprint('projects', __name__)  # 不带 url_prefix，注册时统一加 /api/projects
@@ -98,5 +99,6 @@ def transfer_owner(project_id):
 @jwt_required()
 @require_role('super_admin')
 def sync_templates(project_id):
-    # Phase 1 占位：实现在 Step 1-2-2
-    return error_response('未实现：sync-templates 将在 Step 1-2-2 实现', 501)
+    operator_id = int(get_jwt_identity())
+    result = sync_missing_templates(project_id, operator_id)
+    return success_response(result)

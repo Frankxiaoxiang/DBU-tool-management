@@ -5,6 +5,7 @@ from app.models.project import Project
 from app.models.user import User
 from app.exceptions import ConflictError, NotFoundError, ValidationError
 from app.services.code_generator import generate_project_code
+from app.services.snapshot_service import lock_snapshot
 
 VALID_PRODUCT_TYPES = ('SUS_VC', 'CU_VC', 'HP')
 
@@ -132,8 +133,14 @@ def create_project(payload, operator_id):
         created_by=operator_id,
         version=0,
     )
-    db.session.add(project)
-    db.session.commit()
+    try:
+        db.session.add(project)
+        db.session.flush()               # 获取 project.id，未提交
+        lock_snapshot(project.id, operator_id)
+    except Exception as e:
+        db.session.rollback()
+        raise ValidationError(f"项目创建失败，快照锁定异常: {str(e)}")
+    db.session.commit()                  # project + 所有快照一起落库
     db.session.refresh(project)
     return _serialize_detail(project, owner.full_name)
 

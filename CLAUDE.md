@@ -418,6 +418,8 @@ db.session.commit()
 | 改状态机漏改 5 处 | 跟随本文 §g 工作方式核对 |
 | 前端用 `@/` 路径别名 | 全文搜 `from '@/` 检查 |
 | 自定义业务异常类与 Python 内置名冲突（如 `PermissionError`、`ValueError`、`TypeError`、`NotImplementedError`） | HTTP 403 用 `ForbiddenError`；422 用 `UnprocessableError` 或自定义 `ValidationError`；全文搜 `class PermissionError` / `class ValueError` 等内置名必须无匹配 |
+| 测试 JWT token 缺 `additional_claims={'role_codes': [...]}` → `@require_role` 静默返回 403，**正向用例全挂且无明显报错** | 写 conftest 时 grep `create_access_token`，确认每处均含 `additional_claims`；`require_role` 从 JWT claims 读 role_codes，不查 DB |
+| Service 代码用废弃 API `Model.query.get(pk)` | SQLAlchemy 2.x 起改用 `db.session.get(Model, pk)`；旧写法产生 `LegacyAPIWarning`，grep `\.query\.get(` 全文不应有匹配 |
 
 ---
 
@@ -445,3 +447,4 @@ db.session.commit()
 | 2026-05-10 | Phase 0.6 实战补入 Rule 14：前端 ESLint 版本约束（eslint@8 + eslint-plugin-vue@9 + eslint-config-prettier；@vue/eslint-config-prettier@10 flat config 不兼容；views/ 目录关闭 multi-word-component-names） | Claude |
 | 2026-05-11 | §b 关键文档导航表新增 Doc/PROMPT_TEMPLATES.md 索引行（CLI AI 协作提示词模板库 T00~T07） | Claude |
 | 2026-05-11 | Phase 1 Step 1-0-1：补全 `Doc/04_api_spec.md` §1.1（9 端点）与 §1.2（6 端点 + seal/unseal 草案），新增 `Doc/05_permissions.md` §五（项目与批次端点 @require_role 映射表及前端 permissions.js 派生规则）；同步修正 prompt.txt 路径与 maxLength 错误 | Claude |
+| 2026-05-13 | Phase 1 Step 1-1-3 实战补入：§h 新增 2 条风险行（测试 JWT token 缺 additional_claims 导致 @require_role 静默 403、`Model.query.get()` 废弃 API）；Doc/09_dev_rules.md 后端 #11 补 `db.session.get()` 规则 + Checklist 新增 1 项；Doc/PROMPT_TEMPLATES.md T07 修正 conftest 模板（db.sessionmaker → sqlalchemy.orm 正确导入、补 _original_session 还原与 try/finally、补 additional_claims 说明、Step 5 覆盖率命令改为 coverage run） | Claude |

@@ -123,7 +123,7 @@
 🟢 进行中 | 详细参数见 [TASKS_Phase1_detail.md](./TASKS_Phase1_detail.md)（共 19 个 Step，5 个子模块）
 
 > **建议执行顺序**：1-0-1 → 1-1-1 → 1-1-2 → 1-1-3 → 1-2-1 → 1-2-2 → 1-2-3 → 1-1-4 → 1-1-5 → 1-2-4 → 1-3-1 → 1-3-2 → 1-3-3 → 1-3-4 → 1-3-5 → 1-4-1 →（决策点）→ 1-4-2 → 1-5-1 → 1-5-2
-> **当前进行到**：Step 1-4-1（未开始）
+> **当前进行到**：Step 1-4-2（Frank 决策点，可选）
 
 ### 1.0 准备（1 步）
 
@@ -154,7 +154,7 @@
 
 ### 1.4 手动版封存 / 解封（2 步，第 2 步可选）
 
-- [ ] **1-4-1** 封存/解封 API spec & 业务规则文档化 + 3 条 open questions（手写提示词）
+- [x] **1-4-1** 封存/解封 API spec & 业务规则文档化 + 3 条 open questions（手写提示词）— 2026-05-14
 - [ ] **1-4-2** ⚠️ 可选（Frank 决策后）：seal/unseal 接口骨架（T02）
 
 ### 1.5 Phase 1 收尾（2 步）
@@ -271,3 +271,4 @@
 | 2026-05-14 | Phase 1 Step 1-3-3 完成：test_batch_service.py（16 用例，16 passed）+ conftest.py 追加 Batch import + seeded_project_with_snapshot + seeded_manual_batch；覆盖率 83%；6 项验收 grep 全部通过 | Claude |
 | 2026-05-14 | Phase 1 Step 1-3-4 完成：BatchList.vue + api/batch.js + status.js 追加 batch 状态/类型映射（4+4 值）+ 路由 4 条（场景 A projects/:projectId/batches + 场景 B /batches + 2 条占位）；修正 prompt 3 处 bug（/api/ 双前缀 / 路由前导/ / per_page）；父批次列按 Issue 3-B 决策删除；keyword 含 TODO 注释；pnpm build 通过 | Claude |
 | 2026-05-14 | Phase 1 Step 1-3-5 完成：BatchForm.vue（create/edit/detail 三合一）+ api/batch.js 追加 createBatch/updateBatch + 路由替换占位为真实组件（batches/new→:id→:id/edit），保留 name 字段；批次类型联动（isAddon 判断/parent_batch_id 清空/flow_path 重置）+ version 乐观锁携带；修正 prompt 4 处（createBatch URL 补 trailing slash / validate 二段 try-catch / 路由 name 保留 / child meta 去冗余 requiresAuth）；pnpm build 通过 | Claude |
+| 2026-05-14 | Phase 1 Step 1-4-1 完成：seal/unseal ⚠️ 注释更新（04_api_spec.md §1.2 两条草案端点改为 Phase 2/4 正确分期标注 + §3.3.x 引用）；03_architecture_v1.4.md §3.3 末尾追加"手动版封存联动设计"小节（含业务规则/Phase 2 TODO 代码/状态字段设计说明/与三函数关系）；00_open_questions.md 追加 Q-003/Q-004/Q-005；权限文档无需改动（§五 已含完整内容） | Claude |

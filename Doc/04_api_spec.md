@@ -757,7 +757,7 @@
 | 422 | 批次已处于封存状态 |
 | 422 | 批次已处于 cancelled 状态 |
 
-> ⚠️ Phase 1 spec 草案，实现待 Phase 3（仓储模块）。`sealed_at` / `sealed_by` / `status='sealed'` 字段需在 Step 1-1-1 建模时确认写入 batches 表。
+> ⚠️ Phase 1 spec 草案；seal 核心逻辑（批量更新 fixtures.is_sealed）待 **Phase 2** 实现（fixtures 表建立后）。封存业务规则与状态字段设计详见 `Doc/03_architecture_v1.4.md` §3.3.x。
 
 ---
 
@@ -801,7 +801,7 @@
 | 409 | 数据已被其他请求修改，请刷新后重试 |
 | 422 | 批次未处于封存状态 |
 
-> ⚠️ Phase 1 spec 草案；Phase 4 扩展为 PM + 生产主管会签，届时更新本条目。`sealed_at` / `sealed_by` 字段需在 Step 1-1-1 建模时确认写入 batches 表。
+> ⚠️ Phase 1 spec 草案；Phase 4 扩展为 PM + 生产主管会签审批流（复用 §3.4 sequential 引擎），届时更新本条目。详见 `Doc/03_architecture_v1.4.md` §3.3.x。
 
 ---
 

@@ -676,6 +676,57 @@ def test_no_back_door_in_transition():
     assert 'force' not in sig.parameters
 ```
 
+#### 3.3.x 手动版封存联动设计（Phase 2 + Phase 4 分期实现）
+
+> **设计里程碑**：
+> - 接口骨架（可选）：Phase 1 Step 1-4-2（Frank 决策后）
+> - 封存核心逻辑（fixtures 批量写入）：**Phase 2**（fixtures 表建立后）
+> - 解封审批流接入：**Phase 4**（审批流引擎就绪后）
+
+##### 业务规则
+
+**触发条件（seal）：**
+1. `batch.batch_type` **必须为** `manual_init`（其他类型不允许触发封存）
+2. 同一 `project_id` 下**必须存在**至少一个 `mass_prod` 批次，且其状态 ∈ `{in_progress, completed}`（量产已投产才允许封存手动版）
+3. 操作角色：`super_admin` 或 `warehouse`（仓库管理员执行封存动作）
+
+**执行内容（seal，Phase 2 实现）：**
+```python
+# TODO(Phase 2): 批量封存同批次下所有 fixtures
+# for fixture in batch.fixtures:
+#     fixture.is_sealed = True
+#     fixture.sealed_at = datetime.utcnow()
+#     fixture.sealed_by = operator_id
+#     db.session.add(FixtureStatusHistory(
+#         fixture_id=fixture.id,
+#         from_status=fixture.current_status,
+#         to_status='sealed',
+#         trigger_type='batch_seal',
+#         operator_id=operator_id
+#     ))
+```
+
+**解封流程（unseal）：**
+- **Phase 1**：仅 `super_admin` 可直接解封（无审批），写审计日志
+- **Phase 4**：接入双人会签审批流（PM + 生产主管 `production_lead`），复用 §3.4 的 `sequential` 模式引擎；`approval_id` 关联审批单
+
+##### 状态字段设计说明
+
+封存状态当前**仅由 `fixtures.is_sealed` 字段反映**，不在 `batches.status` 上新增独立状态值。
+原因：`batches.status` 描述批次生命周期（draft → in_progress → completed → cancelled），封存是治具层面的物理状态，两个维度正交，合并会导致状态机路径爆炸。
+
+> 🟡 **待确认（Q-003）**：是否需要在 `batches` 表上新增 `sealed_fixture_count` 汇总字段？详见 `Doc/00_open_questions.md`。
+> 🟡 **待确认（Q-004）**：`manual_init` 批次封存后，`batches.status` 是否需要从现有枚举衍生 `sealed` 子状态？详见 `Doc/00_open_questions.md`。
+> 🟡 **待确认（Q-005）**：解封会签是否复用 §3.4 的 sequential/parallel 引擎？详见 `Doc/00_open_questions.md`。
+
+##### 与状态机三函数的关系
+
+Phase 2 实现封存时，`fixture.is_sealed` 的写入**不走** `transition()` 函数（封存不是标准 12 状态流转），而是独立的 `seal_batch()` Service 函数，并在注释中标注"Phase 4 审批流接入后 unseal 将触发 `transition()` 的解封路径"。
+
+`transition()` 函数签名**永远不允许**加 `force` / `bypass` 参数（§e.4 铁律）。
+
+---
+
 ### 3.4 审批流实现
 
 (同 V1.3,顺序+并行双模式分支,approved/rejected 都透传 decision_type;通知统一邮件)

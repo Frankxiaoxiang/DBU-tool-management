@@ -39,6 +39,51 @@
 
 ---
 
+### Q-003：batches 表是否需要 sealed_fixture_count 汇总字段
+
+- **提出日期**：2026-05-14
+- **背景**：封存操作执行后，前端批次列表/详情页可能需要展示"已封存治具数量"。若不加汇总字段，每次查询需 JOIN fixtures 表计算 COUNT(is_sealed=True)，在批次治具数量较多时有性能压力。
+- **影响范围**：`batches` 表 Schema（需新增字段 + Migration）、`batch_service.seal_batch()`（写入时维护计数）、BatchList.vue / BatchForm.vue（展示字段）
+- **可选方案**：
+  - A. 在 `batches` 表加 `sealed_fixture_count INT DEFAULT 0`，seal 时同步更新（读性能好，写逻辑略复杂）
+  - B. 不加字段，每次查询时 COUNT JOIN（写逻辑简单，读性能略差；治具数量一般 < 100，影响有限）
+- **责任确认方**：Frank（架构决策）
+- **状态**：🟡 待确认
+- **确认结果**：
+- **关闭日期**：
+
+---
+
+### Q-004：manual_init 批次封存后 batches.status 是否新增 sealed 子状态
+
+- **提出日期**：2026-05-14
+- **背景**：当前 `batches.status` 枚举为 `draft / in_progress / completed / cancelled`。手动版批次封存后，业务语义上与"完成"不同（封存是物理锁定，completed 是流程结束）。若不区分，前端无法通过批次状态判断是否已封存；若区分，状态机需新增路径。
+- **影响范围**：`batches` 表 `status` 字段枚举值、`batch_service._safe_transition()`、前端 `utils/status.js` 批次状态映射、`Doc/03_architecture_v1.4.md` §3.3 状态机 TRANSITIONS
+- **可选方案**：
+  - A. 新增 `sealed` 状态值（语义清晰，但状态机路径增加；`manual_init` 批次专属）
+  - B. 保持现有枚举不变，封存状态仅由 `fixtures.is_sealed` 聚合反映（更简单，但 batches 层面无直接状态字段）
+- **责任确认方**：Frank（架构决策）
+- **状态**：🟡 待确认
+- **确认结果**：
+- **关闭日期**：
+
+---
+
+### Q-005：解封会签是否复用 §3.4 的 sequential/parallel 审批流引擎
+
+- **提出日期**：2026-05-14
+- **背景**：解封需要 PM + 生产主管（`production_lead`）双人会签，属于 2 人顺序审批（sequential 模式）。§3.4 设计的审批流引擎支持 sequential/parallel 双模式，理论上可以复用。但解封场景较特殊（涉及 fixtures 批量状态回写），可能需要单独处理 post-approval 回调。
+- **影响范围**：Phase 4 审批流实现范围、`approval_records` 表设计、`batch_service.unseal_batch()` 的 post-approval hook
+- **可选方案**：
+  - A. 完全复用 §3.4 引擎（`flow_type='unseal'`，`sequential_or_parallel='sequential'`），在引擎的 approved 回调里触发 fixtures 解封逻辑
+  - B. 解封走独立审批路径（代码简单，但违反 CLAUDE.md §e.6"禁止为每种场景写独立审批流代码"铁律）——**此方案违规，不推荐**
+- **责任确认方**：Frank（架构决策；Phase 4 开始前需关闭）
+- **状态**：🟡 待确认
+- **确认结果**：
+- **关闭日期**：
+
+---
+
 ## 已关闭问题（归档）
 
 | # | 提出日期 | 问题描述 | 确认方 | 确认结果 | 关闭日期 |

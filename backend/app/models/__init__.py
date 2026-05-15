@@ -6,5 +6,8 @@ from .fixture_template import FixtureTemplate
 from .project import Project
 from .fixture_template_snapshot import FixtureTemplateSnapshot
 from .batch import Batch
+from .fixture import Fixture
+from .fixture_status_history import FixtureStatusHistory
+from .audit_log import AuditLog
 
-__all__ = ['User', 'Role', 'SystemDict', 'Supplier', 'FixtureTemplate', 'Project', 'FixtureTemplateSnapshot', 'Batch']
+__all__ = ['User', 'Role', 'SystemDict', 'Supplier', 'FixtureTemplate', 'Project', 'FixtureTemplateSnapshot', 'Batch', 'Fixture', 'FixtureStatusHistory', 'AuditLog']

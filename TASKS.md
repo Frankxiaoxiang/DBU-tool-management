@@ -171,14 +171,17 @@
 ### 2.0 准备（4 步）
 
 - [x] **2-0-1** API spec §2 核对 + §2.3 fixtures DDL 补写 + 模治具端点权限矩阵补全 — 2026-05-15
-- [ ] **2-0-2** Fixture Model + Migration（T01）
-- [ ] **2-0-3** FixtureStatusHistory Model + Migration（T01）
-- [ ] **2-0-4** AuditLog Model + Migration（T01）
+- [x] **2-0-2** Fixture Model + Migration（T01）— 2026-05-15
+- [x] **2-0-3** FixtureStatusHistory Model + Migration（T01）— 2026-05-15
+- [x] **2-0-4** AuditLog Model + Migration（T01）— 2026-05-15
 
-### 2.1 – 2.7 核心模块
+### 2.1 编码自动生成（1 步）
+
+- [x] **2-1-1** code_generator.generate_fixture_code()（T02 裁剪）— 2026-05-15
+
+### 2.2 – 2.7 核心模块
 
 - [ ] 治具 CRUD（2-3-1 ~ 2-3-3）
-- [ ] 编码自动生成（2-1-1）
 - [ ] 状态机三函数（2-2-1）
 - [ ] 图纸版本管理（2-4-1 ~ 2-4-2）
 - [ ] 加开-复制图纸（2-5-1 ~ 2-5-2）
@@ -286,3 +289,7 @@
 | 2026-05-14 | Phase 1 Step 1-5-1 完成：5 条端到端冒烟脚本全部 PASS（curl 验证通道）；修正 prompt 5 处错误（flask shell -c 无效 / Test5-B 权限 PM→SUPER / FixtureTemplate 字段名 code+applicable_products+name+process_step / User.full_name / 模板计数含 BOTH 类）；发现 1 条历史 cancelled 批次（SNAP-M0-1，id=1，属先前单测数据，非本次冒烟产生）；前端双通道验证由 Frank 手动执行后填入 | Claude |
 | 2026-05-14 | Phase 1 Step 1-5-2 完成：CLAUDE.md §c 切换至 Phase 2 / §h 新增 2 条风险行（flask shell -c 无效 + curl POST 尾部斜杠）/ §j 追加完成记录；TASKS.md Phase 1 全部勾选；Phase 1 正式关闭 | Claude |
 | 2026-05-15 | Phase 2 Step 2-0-1 完成：04_api_spec.md §2 端点核对通过（12端点 + 15 trigger 无差异）；03_architecture_v1.4.md §2.3 fixtures DDL 正式补写（Frank 三项裁决落定）；05_permissions.md §六 新增模治具端点权限映射（15端点行 + FIXTURE_PERMISSIONS 代码块）；00_open_questions.md 归档 Q-006/007/008、登记 Q-009；TASKS.md Phase 2 段展开为 2.0 + 2.1–2.7 子节 | Claude |
+| 2026-05-15 | Phase 2 Step 2-0-2 完成：backend/app/models/fixture.py 新建（20字段，5索引，6外键含自引用）；Migration 0e35621fe635 upgrade 通过；SHOW CREATE TABLE 确认 utf8mb4 + 所有字段正确 | Claude |
+| 2026-05-15 | Phase 2 Step 2-0-3 完成：backend/app/models/fixture_status_history.py 新建（10字段，business_record，无 status/version/updated_at，2外键，2索引）；Migration f606ac693c26 upgrade 通过；SHOW CREATE TABLE 确认 utf8mb4 + created_at DEFAULT now() | Claude |
+| 2026-05-15 | Phase 2 Step 2-0-4 完成：backend/app/models/audit_log.py 新建（7字段，business_record，无 status/version/updated_at，1外键，3索引）；Migration 3cf8a913acea upgrade 通过；SHOW CREATE TABLE 确认 utf8mb4；无 Blueprint（查询端点留 Phase 6） | Claude |
+| 2026-05-15 | Phase 2 Step 2-1-1 完成：code_generator.py 扩展新增 generate_fixture_code()（格式 [项目代号]-[型号代号]#[套号]-[版本号]，select API，NotFoundError/ValidationError 异常处理，并发安全注释）；同步修复旧函数 generate_project_code() 废弃 API（query.filter_by→select）；冒烟 4 用例全部 PASS | Claude |

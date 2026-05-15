@@ -84,11 +84,28 @@
 
 ---
 
+### Q-009：`seal_batch` 时 `fixture.current_status` 是否同步改为 `sealed`
+
+- **提出日期**：2026-05-15
+- **背景**：`seal_batch()` 向 `fixture_status_history` 写入一条辅助事件记录。§3.3.x 的代码示例写的是 `to_status='sealed'`，但同节文本又说"封存状态当前仅由 `fixtures.is_sealed` 字段反映，`current_status` 不变"。两者存在轻微张力。
+- **影响范围**：`batch_service.seal_batch()` 的 `FixtureStatusHistory` 写入逻辑（Step 2-7-1）；若 `current_status` 变为 `sealed`，则需在状态机 `TRANSITIONS` 中对 `sealed` 增加出口路径（影响 `state_machine.py` + 前端 `status.js` + i18n）
+- **可选方案**：
+  - A. `to_status = fixture.current_status`（历史记录中 from_status == to_status，语义为"辅助事件"，不影响工艺流程状态；与 `version_bump` 同模式，**推荐**）
+  - B. `to_status = 'sealed'`（严格照搬 §3.3.x 代码示例；需同步评估是否修改 `TRANSITIONS` 增加 sealed 出口）
+- **责任确认方**：Frank（Step 2-7-1 执行前必须关闭）
+- **状态**：🟡 待确认
+- **确认结果**：
+- **关闭日期**：
+
+---
+
 ## 已关闭问题（归档）
 
 | # | 提出日期 | 问题描述 | 确认方 | 确认结果 | 关闭日期 |
 |---|----------|----------|--------|----------|----------|
-| - | - | - | - | - | - |
+| Q-006 | 2026-05-15 | `fixtures` 表是否保留独立的 `status`（行政作废）字段，与 `current_status`（12状态机）并存 | Frank | ✅ 保留 `fixtures.status`（active/cancelled），与 `current_status` 两个正交维度，同 projects/batches 一致（§e.3/§e.12） | 2026-05-15 |
+| Q-007 | 2026-05-15 | 图纸版本升级是否需要独立的 `fixture_version_history` 表 | Frank | ❌ 不新建；复用 `fixture_status_history`，`version_bump()` 写 `trigger_type='version_bump'` + `from_status==to_status==current_status` + `reason` 记录版本变化 | 2026-05-15 |
+| Q-008 | 2026-05-15 | `POST /api/fixtures/batch-seal` 批量封存是否纳入 Phase 2 | Frank | ✅ 纳入 Phase 2（Step 2-7-1）；`unseal` 解封审批流（PM + 生产主管会签）仍留 Phase 4 | 2026-05-15 |
 
 ---
 

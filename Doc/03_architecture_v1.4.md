@@ -307,9 +307,80 @@ class Project(db.Model):
 
 #### `batches` 和 `fixtures`
 
-(DDL 同 V1.3;Model 定义同样删除 `__mapper_args__`)
+#### fixtures — 治具主表
+
+```sql
+CREATE TABLE fixtures (
+  id                    BIGINT PRIMARY KEY AUTO_INCREMENT,
+  fixture_code          VARCHAR(32) UNIQUE NOT NULL,            -- 系统按编码规则生成，禁止前端拼接（§e.7）
+  batch_id              BIGINT NOT NULL,
+  project_id            BIGINT NOT NULL,                        -- 冗余字段，便于按项目过滤；与 batch.project_id 一致性由 Service 层保证
+  fixture_type_code     VARCHAR(16) NOT NULL,                   -- 治具型号代号，如 FB-YN
+  set_no                INT NOT NULL,                           -- 套号 #N 的 N，从 1 起连续递增（《编码规则 V1.0》§2.2）
+  current_version_code  VARCHAR(8) NOT NULL DEFAULT 'A1',       -- 图纸版本 A1/A2/A3/B1…；不用 ENUM，Service 层校验
+  current_status        VARCHAR(16) NOT NULL DEFAULT 'pending_iqc',  -- 12 状态机工艺流程；不用 ENUM（§e.4）
+  parent_fixture_id     BIGINT NULL,                            -- 自引用；仅"加开-复制图纸"溯源（§e.7）
+  supplier_id           BIGINT NULL,                            -- 采购前未定故可空
+  lead_time_days        INT NULL,
+  planned_arrival_date  DATE NULL,
+  is_sealed             BOOLEAN NOT NULL DEFAULT FALSE,         -- 封存标志（§3.3.x）
+  sealed_at             DATETIME NULL,
+  sealed_by             BIGINT NULL,
+  status                VARCHAR(16) NOT NULL DEFAULT 'active',  -- 行政作废（active/cancelled）；与 current_status 正交（Frank 2026-05-15 裁决）
+  version               INT NOT NULL DEFAULT 0,                -- 手动乐观锁，不用 ORM 自动版（§e.5）
+  created_by            BIGINT NOT NULL,
+  created_at            DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at            DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_batch   (batch_id),
+  INDEX idx_project (project_id),
+  INDEX idx_status  (current_status),
+  INDEX idx_type    (fixture_type_code),
+  INDEX idx_parent  (parent_fixture_id),
+  CONSTRAINT fk_fix_batch     FOREIGN KEY (batch_id)           REFERENCES batches(id),
+  CONSTRAINT fk_fix_project   FOREIGN KEY (project_id)         REFERENCES projects(id),
+  CONSTRAINT fk_fix_parent    FOREIGN KEY (parent_fixture_id)  REFERENCES fixtures(id),
+  CONSTRAINT fk_fix_supplier  FOREIGN KEY (supplier_id)        REFERENCES suppliers(id),
+  CONSTRAINT fk_fix_sealed_by FOREIGN KEY (sealed_by)          REFERENCES users(id),
+  CONSTRAINT fk_fix_created   FOREIGN KEY (created_by)         REFERENCES users(id)
+)
+ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+```python
+# app/models/fixture.py
+from extensions import db  # ★ 不得写 from app.extensions import db（§h 高频笔误）
+
+class Fixture(db.Model):
+    __tablename__ = 'fixtures'
+    __table_args__ = {'mysql_charset': 'utf8mb4', 'mysql_collate': 'utf8mb4_unicode_ci'}
+
+    id                   = db.Column(db.BigInteger, primary_key=True)
+    fixture_code         = db.Column(db.String(32), unique=True, nullable=False)
+    batch_id             = db.Column(db.BigInteger, db.ForeignKey('batches.id'), nullable=False)
+    project_id           = db.Column(db.BigInteger, db.ForeignKey('projects.id'), nullable=False)
+    fixture_type_code    = db.Column(db.String(16), nullable=False)
+    set_no               = db.Column(db.Integer, nullable=False)
+    current_version_code = db.Column(db.String(8), nullable=False, default='A1')
+    current_status       = db.Column(db.String(16), nullable=False, default='pending_iqc')
+    parent_fixture_id    = db.Column(db.BigInteger, db.ForeignKey('fixtures.id'), nullable=True)
+    supplier_id          = db.Column(db.BigInteger, db.ForeignKey('suppliers.id'), nullable=True)
+    lead_time_days       = db.Column(db.Integer, nullable=True)
+    planned_arrival_date = db.Column(db.Date, nullable=True)
+    is_sealed            = db.Column(db.Boolean, nullable=False, default=False)
+    sealed_at            = db.Column(db.DateTime, nullable=True)
+    sealed_by            = db.Column(db.BigInteger, db.ForeignKey('users.id'), nullable=True)
+    status               = db.Column(db.String(16), nullable=False, default='active')
+    version              = db.Column(db.Integer, nullable=False, default=0)
+    created_by           = db.Column(db.BigInteger, db.ForeignKey('users.id'), nullable=False)
+    created_at           = db.Column(db.DateTime, server_default=db.func.now())
+    updated_at           = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+
+    # ★ 不加 __mapper_args__ = {'version_id_col': version}（§e.5 / CLAUDE.md §h）
+```
 
 `fixtures.parent_fixture_id` 仅用于"加开-复制图纸"场景;加开-加量复制时 `current_version_code` 继承源治具(业务规则)。
+
+> **§2.3 修订记录**：V1.4 补写自 Phase 2 Step 2-0-1，Frank 2026-05-15 三项裁决落定（保留 `fixtures.status` 正交字段、不新建 `fixture_version_history` 表、`batch-seal` 纳入 Phase 2）。
 
 ### 2.4 — 2.8
 

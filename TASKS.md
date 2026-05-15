@@ -166,13 +166,24 @@
 
 ## Phase 2 — 模治具核心模块
 
-- [ ] 治具 CRUD
-- [ ] 编码自动生成（services/code_generator.py）
-- [ ] 图纸版本管理（A1 → A2 → A3 → B1 → ...）
-- [ ] 加开-复制图纸（parent_fixture_id 溯源）
-- [ ] 状态机三函数（transition / reject / force_transition）
-- [ ] 状态历史表写入
-- [ ] 单元测试覆盖（含 test_no_back_door_in_transition）
+🟢 进行中 | 详细参数见 [TASKS_Phase2_detail.md](./TASKS_Phase2_detail.md)（共 16 个 Step，7 个子模块）
+
+### 2.0 准备（4 步）
+
+- [x] **2-0-1** API spec §2 核对 + §2.3 fixtures DDL 补写 + 模治具端点权限矩阵补全 — 2026-05-15
+- [ ] **2-0-2** Fixture Model + Migration（T01）
+- [ ] **2-0-3** FixtureStatusHistory Model + Migration（T01）
+- [ ] **2-0-4** AuditLog Model + Migration（T01）
+
+### 2.1 – 2.7 核心模块
+
+- [ ] 治具 CRUD（2-3-1 ~ 2-3-3）
+- [ ] 编码自动生成（2-1-1）
+- [ ] 状态机三函数（2-2-1）
+- [ ] 图纸版本管理（2-4-1 ~ 2-4-2）
+- [ ] 加开-复制图纸（2-5-1 ~ 2-5-2）
+- [ ] 批量封存（2-7-1，Frank 2026-05-15 裁决纳入）
+- [ ] 单元测试覆盖（2-6-1 ~ 2-6-2，含 test_no_back_door_in_transition）
 
 ---
 
@@ -274,3 +285,4 @@
 | 2026-05-14 | Phase 1 Step 1-4-1 完成：seal/unseal ⚠️ 注释更新（04_api_spec.md §1.2 两条草案端点改为 Phase 2/4 正确分期标注 + §3.3.x 引用）；03_architecture_v1.4.md §3.3 末尾追加"手动版封存联动设计"小节（含业务规则/Phase 2 TODO 代码/状态字段设计说明/与三函数关系）；00_open_questions.md 追加 Q-003/Q-004/Q-005；权限文档无需改动（§五 已含完整内容） | Claude |
 | 2026-05-14 | Phase 1 Step 1-5-1 完成：5 条端到端冒烟脚本全部 PASS（curl 验证通道）；修正 prompt 5 处错误（flask shell -c 无效 / Test5-B 权限 PM→SUPER / FixtureTemplate 字段名 code+applicable_products+name+process_step / User.full_name / 模板计数含 BOTH 类）；发现 1 条历史 cancelled 批次（SNAP-M0-1，id=1，属先前单测数据，非本次冒烟产生）；前端双通道验证由 Frank 手动执行后填入 | Claude |
 | 2026-05-14 | Phase 1 Step 1-5-2 完成：CLAUDE.md §c 切换至 Phase 2 / §h 新增 2 条风险行（flask shell -c 无效 + curl POST 尾部斜杠）/ §j 追加完成记录；TASKS.md Phase 1 全部勾选；Phase 1 正式关闭 | Claude |
+| 2026-05-15 | Phase 2 Step 2-0-1 完成：04_api_spec.md §2 端点核对通过（12端点 + 15 trigger 无差异）；03_architecture_v1.4.md §2.3 fixtures DDL 正式补写（Frank 三项裁决落定）；05_permissions.md §六 新增模治具端点权限映射（15端点行 + FIXTURE_PERMISSIONS 代码块）；00_open_questions.md 归档 Q-006/007/008、登记 Q-009；TASKS.md Phase 2 段展开为 2.0 + 2.1–2.7 子节 | Claude |

@@ -162,3 +162,47 @@ const PROJECT_PERMISSIONS = {
   'batch.unseal':           ['super_admin'],
 }
 ```
+
+---
+
+## 六、Phase 2 模治具端点权限（@require_role 映射）
+
+> **说明**：本节是后端 `@require_role()` 装饰器的单一真实来源，前端 `permissions.js` 按钮级权限派生自此表。凡实现端点必须严格对照本节标注。
+
+| 端点 | 方法 | @require_role（允许角色） | 备注 |
+|------|------|--------------------------|------|
+| `/api/fixtures` | GET | 任意已登录用户 | 宽视图原则，所有角色均可查看 |
+| `/api/fixtures` | POST | `super_admin`, `pm`, `me` | 治具新建（待 Frank 最终确认角色范围） |
+| `/api/fixtures/:id` | GET | 任意已登录用户 | 宽视图 |
+| `/api/fixtures/:id` | PUT | `super_admin`, `pm`, `me` | 治具基本信息编辑（同新建） |
+| `/api/fixtures/:id/status` | PATCH（trigger=IQC 相关：`iqc_pass` / `concession_approved` / `emergency_auth` / `return_repair`） | `super_admin`, `iqc` | IQC 流程节点 |
+| `/api/fixtures/:id/status` | PATCH（trigger=安装/验收相关：`normal`(INSTALLING→ACCEPTANCE_TESTING) / `acceptance_pass` / `rework` / `acceptance_fail_scrap`） | `super_admin`, `me` | ME 工程师节点 |
+| `/api/fixtures/:id/status` | PATCH（trigger=领用归还：`checkout` / `return` / `maintenance_due` / `repair_request`） | `super_admin`, `production_lead`, `warehouse` | 仓储与生产节点 |
+| `/api/fixtures/:id/status` | PATCH（trigger=报废：`scrap`） | `super_admin`, `pm` | 报废发起 |
+| `/api/fixtures/:id/force-status` | POST | `super_admin` | 强制跳转，唯一超管专属 |
+| `/api/fixtures/:id/version-bump` | POST | `super_admin`, `pm`, `design_engineer` | 图纸版本升级 |
+| `/api/fixtures/:id/copy-to-batch` | POST | `super_admin`, `pm`, `design_engineer` | 加开-复制图纸 |
+| `/api/fixtures/batch-seal` | POST | `super_admin`, `warehouse` | 批量封存（§3.3.x 业务规则） |
+| `/api/fixtures/:id/release-seal` | POST | `super_admin` | 解封（Phase 4 扩展为 PM+生产主管会签，当前仅超管） |
+| `/api/fixtures/:id/recalc-dates` | POST | `super_admin`, `pm` | 计划日期重算（Phase 5 实现；Phase 2 先定权限） |
+| `/api/fixtures/export` | GET | 任意已登录用户 | 导出属只读操作 |
+
+> **`PATCH /api/fixtures/:id/status` 说明**：单一端点按 `trigger` 字段分场景管控权限，后端实现时在 Blueprint 内解析 `trigger` 后再校验角色；表中分行列出是为了便于后端实现者对照，`@require_role` 装饰器层面以"所有可能操作角色的并集"做粗粒度拦截，Service 层做精细 trigger × role 校验。
+
+**前端 `permissions.js` 派生规则（供 Phase 2 前端 Step 参考）：**
+```javascript
+const FIXTURE_PERMISSIONS = {
+  'fixture.create':        ['super_admin', 'pm', 'me'],
+  'fixture.edit':          ['super_admin', 'pm', 'me'],
+  'fixture.status.iqc':    ['super_admin', 'iqc'],
+  'fixture.status.me':     ['super_admin', 'me'],
+  'fixture.status.wh':     ['super_admin', 'production_lead', 'warehouse'],
+  'fixture.status.scrap':  ['super_admin', 'pm'],
+  'fixture.force_status':  ['super_admin'],
+  'fixture.version_bump':  ['super_admin', 'pm', 'design_engineer'],
+  'fixture.copy_to_batch': ['super_admin', 'pm', 'design_engineer'],
+  'fixture.batch_seal':    ['super_admin', 'warehouse'],
+  'fixture.release_seal':  ['super_admin'],
+  'fixture.recalc_dates':  ['super_admin', 'pm'],
+}
+```

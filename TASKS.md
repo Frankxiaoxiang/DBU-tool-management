@@ -185,7 +185,8 @@
 
 ### 2.3 – 2.5, 2.7 核心模块
 
-- [ ] 治具 CRUD（2-3-1 ~ 2-3-3）
+- [x] **2-3-1** fixture_service + fixtures Blueprint（6 端点实现 + 6 端点 501 占位）— 2026-05-16
+- [ ] 治具 CRUD 前端（2-3-2 ~ 2-3-3）
 - [ ] 图纸版本管理（2-4-1 ~ 2-4-2）
 - [ ] 加开-复制图纸（2-5-1 ~ 2-5-2）
 - [ ] 批量封存（2-7-1，Frank 2026-05-15 裁决纳入）
@@ -302,3 +303,4 @@
 | 2026-05-15 | Phase 2 Step 2-1-1 完成：code_generator.py 扩展新增 generate_fixture_code()（格式 [项目代号]-[型号代号]#[套号]-[版本号]，select API，NotFoundError/ValidationError 异常处理，并发安全注释）；同步修复旧函数 generate_project_code() 废弃 API（query.filter_by→select）；冒烟 4 用例全部 PASS | Claude |
 | 2026-05-15 | Phase 2 Step 2-2-1 完成：state_machine.py 新建（TRANSITIONS 12条/REJECT_CONFIG 2条/三函数）；audit_service.py 新建（log_force_action）；enums.py FixtureStatus 12状态落定；status.js 追加 FIXTURE_STATUS_MAP；§3.3 + §2 trigger 表核对一致；冒烟 5 项通过 | Claude |
 | 2026-05-16 | Phase 2 Step 2-6-1 完成：test_state_machine.py 新建（12用例全部 PASSED，含 test_no_back_door_in_transition）；conftest.py 扩展 make_fixture 工厂 fixture；state_machine.py / audit_service.py 覆盖率均 100%；顺带修复 Schema bug：fixtures.current_status / fixture_status_history.from_status / to_status 均从 VARCHAR(16) 扩展至 VARCHAR(32)（3 条 Migration de2a67838513 + 9cfc47ae4fd0 升级完成） | Claude |
+| 2026-05-16 | Phase 2 Step 2-3-1 完成：fixture_service（list/get/create/update/change_fixture_status/force_fixture_status 六函数）+ fixtures Blueprint（6 端点实现 + version-bump/copy-to-batch/batch-seal/release-seal/recalc-dates/export 6 端点 501 占位）+ TRIGGER_ROLE_MAP 精细 trigger×role 校验 + 三函数分发（reject/transition/TRANSITIONS 反查 to_status）+ ConflictError 扩展 data 字段支持 AC-3 version 冲突响应；烟测 8 用例全部通过（A-H）；11 条验收 grep 全部 PASS | Claude |

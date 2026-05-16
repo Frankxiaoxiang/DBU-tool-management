@@ -64,6 +64,9 @@ def create_app(config_name=None):
     from app.blueprints.batches import batch_bp
     app.register_blueprint(batch_bp, url_prefix='/api/batches')
 
+    from app.blueprints.fixtures import fixtures_bp
+    app.register_blueprint(fixtures_bp, url_prefix='/api/fixtures')
+
     # ⑥ 全局 errorhandler
     _register_error_handlers(app)
 
@@ -89,7 +92,8 @@ def _register_error_handlers(app):
 
     @app.errorhandler(ConflictError)
     def handle_conflict(err):
-        return error_response(err.message, 409)
+        kwargs = {'data': err.data} if getattr(err, 'data', None) else {}
+        return error_response(err.message, 409, **kwargs)
 
     @app.errorhandler(ValidationError)
     def handle_validation(err):

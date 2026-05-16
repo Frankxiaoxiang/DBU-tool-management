@@ -426,6 +426,7 @@ db.session.commit()
 | Model 文件 import 写成 `from app.extensions import db` | 本项目启动时已将 `app/` 加入 Python path，全部 Model 统一用 `from extensions import db`；`from app.extensions import db` 是标准 Flask 惯例但在本项目会与现有所有 Model 不一致，是 AI 新建 Model 时的高频笔误；grep `from app.extensions` 全文不应有匹配 |
 | 冒烟测试写 `flask shell -c "..."` | Flask 的 `shell` 子命令**无 `-c` 选项**，执行时报 `Got unexpected extra arguments`。正确方式：`backend/.venv/Scripts/python << 'EOF' ... EOF`，在脚本内手动 `create_app()` + `with app.app_context():` |
 | curl POST 到 Blueprint `'/'` 路由时漏掉尾部斜杠 | Flask `strict_slashes=True` 默认：POST `/api/projects` 会被 308 重定向到 `/api/projects/`，curl 不自动追踪 POST 重定向 → 请求体丢失，静默失败。**curl 冒烟脚本中 POST / GET-list 路由必须加尾部斜杠** |
+| 命名路由（如 `/batch-seal`、`/version-bump`）误加尾部斜杠 | 尾部斜杠规则**仅适用 Blueprint 根路由 `'/'`**（`GET /` 列表 + `POST /` 新建两条）；命名路由**禁止加尾部斜杠**——加了后客户端访问无斜杠版本会被 301 重定向，制造新的请求体丢失问题。任务文档写"POST 加尾部斜杠（§h）"时，AI 必须判断该端点是 `'/'` 还是命名路由，**只有 `'/'` 适用** |
 
 ---
 
@@ -457,3 +458,4 @@ db.session.commit()
 | 2026-05-14 | Phase 1 Step 1-3-1 实战补入：§h 新增 1 条风险行（Model import 路径 `from app.extensions import db` 笔误）；Doc/09_dev_rules.md 后端 #11 追加 import 路径子条；Doc/PROMPT_TEMPLATES.md T01 Step 2 追加 import 提示 | Claude |
 | 2026-05-14 | Phase 1 全部完成（Step 1-0-1 ~ 1-5-2）：项目模块 / 模板快照 / 批次模块 / 封存解封规约文档化 / 端到端冒烟 5 条全 PASS；§c 切换至 Phase 2；§h 新增 2 条风险行（`flask shell -c` 无效 / curl POST 尾部斜杠） | Claude |
 | 2026-05-15 | Phase 2 Step 2-0-1：Doc/04_api_spec.md §2 端点核对通过（12端点 + 15 trigger 值全部存在）；Doc/03_architecture_v1.4.md §2.3 补写 fixtures 完整 DDL（含封存/状态/乐观锁字段，Frank 三项裁决落定）；Doc/05_permissions.md §六 新增模治具端点 @require_role 映射（15行 + FIXTURE_PERMISSIONS 代码块）；Doc/00_open_questions.md 归档 Q-006/Q-007/Q-008 + 登记 Q-009（seal_batch to_status 待拍板） | Claude |
+| 2026-05-16 | Phase 2 Step 2-7-1 实战补入：§h 新增 1 条风险行（命名路由误加尾部斜杠——尾部斜杠规则仅适用 `'/'` 根路由，`/batch-seal`/`/version-bump` 等命名路由禁止加，加了反而触发 301 重定向） | Claude |

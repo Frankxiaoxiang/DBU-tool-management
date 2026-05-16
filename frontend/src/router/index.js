@@ -76,6 +76,34 @@ const routes = [
         component: () => import('../views/batch/BatchForm.vue'),
         meta: { mode: 'edit' },
       },
+      // ── 治具模块 ──────────────────────────────────────
+      {
+        // 场景 A：从批次下钻，project_id / batch_id 由路由参数自动预填
+        path: 'projects/:projectId/batches/:batchId/fixtures',
+        name: 'FixtureListInBatch',
+        component: () => import('../views/fixture/FixtureList.vue'),
+      },
+      {
+        // 场景 B：全局治具列表，搜索栏 project_id / batch_id 手动填写
+        path: 'fixtures',
+        name: 'FixtureList',
+        component: () => import('../views/fixture/FixtureList.vue'),
+      },
+      {
+        // 注意：fixtures/new 如需新建入口，须在 fixtures/:id 之前注册（防止 'new' 被动态参数捕获）
+        // 详情页：Step 2-3-3 完成后替换为 FixtureForm.vue
+        path: 'fixtures/:id',
+        name: 'FixtureDetail',
+        component: () => import('../views/fixture/FixtureList.vue'),
+        meta: { mode: 'detail' },
+      },
+      {
+        // 编辑页：Step 2-3-3 完成后替换为 FixtureForm.vue
+        path: 'fixtures/:id/edit',
+        name: 'FixtureEdit',
+        component: () => import('../views/fixture/FixtureList.vue'),
+        meta: { mode: 'edit' },
+      },
     ],
   },
   {

@@ -186,10 +186,12 @@
 ### 2.3 – 2.5, 2.7 核心模块
 
 - [x] **2-3-1** fixture_service + fixtures Blueprint（6 端点实现 + 6 端点 501 占位）— 2026-05-16
-- [ ] 治具 CRUD 前端（2-3-2 ~ 2-3-3）
+- [x] **2-3-2** FixtureList 前端列表页（T03）— 2026-05-16
+- [ ] **2-3-3** FixtureForm 前端表单页（create/edit/detail 三合一）
+- [ ] 图纸版本管理（2-4-1 ~ 2-4-2）
 - [ ] 图纸版本管理（2-4-1 ~ 2-4-2）
 - [ ] 加开-复制图纸（2-5-1 ~ 2-5-2）
-- [ ] 批量封存（2-7-1，Frank 2026-05-15 裁决纳入）
+- [x] **2-7-1** batch_service.seal_batch() + POST /api/fixtures/batch-seal — 2026-05-16
 
 ### 2.6 单元测试覆盖
 
@@ -304,3 +306,5 @@
 | 2026-05-15 | Phase 2 Step 2-2-1 完成：state_machine.py 新建（TRANSITIONS 12条/REJECT_CONFIG 2条/三函数）；audit_service.py 新建（log_force_action）；enums.py FixtureStatus 12状态落定；status.js 追加 FIXTURE_STATUS_MAP；§3.3 + §2 trigger 表核对一致；冒烟 5 项通过 | Claude |
 | 2026-05-16 | Phase 2 Step 2-6-1 完成：test_state_machine.py 新建（12用例全部 PASSED，含 test_no_back_door_in_transition）；conftest.py 扩展 make_fixture 工厂 fixture；state_machine.py / audit_service.py 覆盖率均 100%；顺带修复 Schema bug：fixtures.current_status / fixture_status_history.from_status / to_status 均从 VARCHAR(16) 扩展至 VARCHAR(32)（3 条 Migration de2a67838513 + 9cfc47ae4fd0 升级完成） | Claude |
 | 2026-05-16 | Phase 2 Step 2-3-1 完成：fixture_service（list/get/create/update/change_fixture_status/force_fixture_status 六函数）+ fixtures Blueprint（6 端点实现 + version-bump/copy-to-batch/batch-seal/release-seal/recalc-dates/export 6 端点 501 占位）+ TRIGGER_ROLE_MAP 精细 trigger×role 校验 + 三函数分发（reject/transition/TRANSITIONS 反查 to_status）+ ConflictError 扩展 data 字段支持 AC-3 version 冲突响应；烟测 8 用例全部通过（A-H）；11 条验收 grep 全部 PASS | Claude |
+| 2026-05-16 | Phase 2 Step 2-7-1 完成：batch_service.seal_batch() 新增（加 cancelled 守卫 + 乐观锁 + manual_init 类型校验 + mass_prod 前置批次校验 + 遍历写 is_sealed/sealed_at/sealed_by + 直接 INSERT FixtureStatusHistory trigger_type='batch_seal' + batch.version+=1）；fixtures Blueprint /batch-seal 501 占位替换为实现（@require_role('super_admin','warehouse')）；烟测 4 用例全部通过（addon_quantity→400 / cancelled→400 / version 过期→409 / 合法封存→200 sealed_count=1）；DB 验证 is_sealed=True + history 写入正确 | Claude |
+| 2026-05-16 | Phase 2 Step 2-3-2 完成：FixtureList.vue（双场景路由 A/B + 4条过滤 + 9列表格 + 4操作按钮含2占位）+ api/fixture.js（listFixtures/getFixtureById，修正 /api/ 双前缀 bug）+ 路由4条（2正式+2占位，作为 Layout children 无前导/）；FIXTURE_STATUS_MAP 复用 2-2-1；prompt 3 处 bug 修正（/api/ 双前缀 / computed 漏 import / 路由前导/）；pnpm build 通过（0 errors）；9条验收 grep 全部 PASS | Claude |

@@ -5,6 +5,8 @@ from app.models.batch import Batch
 from app.models.project import Project
 from app.models.fixture_template_snapshot import FixtureTemplateSnapshot
 from app.exceptions import ConflictError, NotFoundError, ValidationError
+from app.models.fixture import Fixture
+from app.models.fixture_status_history import FixtureStatusHistory
 
 VALID_BATCH_TYPES = ('manual_init', 'mass_prod', 'addon_quantity', 'addon_optimize')
 VALID_FLOW_PATHS = ('full', 'simplified')
@@ -245,6 +247,50 @@ def update_batch(batch_id, payload, operator_id):
     db.session.commit()
     db.session.refresh(batch)
     return _serialize_detail(batch)
+
+
+def seal_batch(batch_id, request_version, operator_id):
+    batch = _get_or_404(batch_id)
+
+    if batch.status == 'cancelled':
+        raise ValidationError('已 cancelled 的批次不可封存')
+
+    assert request_version is not None, 'version is required'
+    if batch.version != request_version:
+        raise ConflictError('数据已被其他请求修改，请刷新后重试')
+
+    if batch.batch_type != 'manual_init':
+        raise ValidationError('仅 manual_init 批次支持批量封存', field='batch_id')
+
+    mass_prod = db.session.execute(
+        db.select(Batch).where(
+            Batch.project_id == batch.project_id,
+            Batch.batch_type == 'mass_prod',
+            Batch.status.in_(['in_progress', 'completed']),
+        )
+    ).scalars().first()
+    if not mass_prod:
+        raise ValidationError('同项目下不存在状态为 in_progress 或 completed 的量产批次，无法封存')
+
+    fixtures = db.session.execute(
+        db.select(Fixture).where(Fixture.batch_id == batch_id)
+    ).scalars().all()
+
+    for fixture in fixtures:
+        fixture.is_sealed = True
+        fixture.sealed_at = db.func.now()
+        fixture.sealed_by = operator_id
+        db.session.add(FixtureStatusHistory(
+            fixture_id=fixture.id,
+            from_status=fixture.current_status,
+            to_status=fixture.current_status,
+            trigger_type='batch_seal',
+            operator_id=operator_id,
+        ))
+
+    batch.version += 1
+    db.session.commit()
+    return {'sealed_count': len(fixtures)}
 
 
 def cancel_batch(batch_id, reason, operator_id, request_version):

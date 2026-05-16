@@ -5,6 +5,7 @@ from app.exceptions import ValidationError
 from app.utils.decorators import require_role
 from app.utils.response import error_response, success_response
 import app.services.fixture_service as fixture_service
+import app.services.batch_service as batch_service
 
 fixtures_bp = Blueprint('fixtures', __name__)  # 不带 url_prefix，注册时统一加 /api/fixtures
 
@@ -105,9 +106,16 @@ def force_fixture_status(fixture_id):
 
 @fixtures_bp.route('/batch-seal', methods=['POST'])
 @jwt_required()
+@require_role('super_admin', 'warehouse')
 def batch_seal():
-    # TODO Phase 2 Step 2-7-1
-    return error_response('Not implemented: Phase 2 Step 2-7-1', 501)
+    body = request.get_json(silent=True) or {}
+    if 'batch_id' not in body:
+        raise ValidationError('batch_id 为必填项', field='batch_id')
+    if 'version' not in body:
+        raise ValidationError('version 为必填项', field='version')
+    operator_id = int(get_jwt_identity())
+    result = batch_service.seal_batch(body['batch_id'], body['version'], operator_id)
+    return success_response(result)
 
 
 @fixtures_bp.route('/<int:fixture_id>/version-bump', methods=['POST'])

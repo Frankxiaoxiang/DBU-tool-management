@@ -179,14 +179,21 @@
 
 - [x] **2-1-1** code_generator.generate_fixture_code()（T02 裁剪）— 2026-05-15
 
-### 2.2 – 2.7 核心模块
+### 2.2 状态机三函数（1 步）
+
+- [x] **2-2-1** state_machine.py 三函数 + audit_service + 前端状态映射 + 文档同步（T05）— 2026-05-15
+
+### 2.3 – 2.5, 2.7 核心模块
 
 - [ ] 治具 CRUD（2-3-1 ~ 2-3-3）
-- [ ] 状态机三函数（2-2-1）
 - [ ] 图纸版本管理（2-4-1 ~ 2-4-2）
 - [ ] 加开-复制图纸（2-5-1 ~ 2-5-2）
 - [ ] 批量封存（2-7-1，Frank 2026-05-15 裁决纳入）
-- [ ] 单元测试覆盖（2-6-1 ~ 2-6-2，含 test_no_back_door_in_transition）
+
+### 2.6 单元测试覆盖
+
+- [x] **2-6-1** test_state_machine.py（T07）— 2026-05-16
+- [ ] **2-6-2** test_fixture_service.py（T07）
 
 ---
 
@@ -293,3 +300,5 @@
 | 2026-05-15 | Phase 2 Step 2-0-3 完成：backend/app/models/fixture_status_history.py 新建（10字段，business_record，无 status/version/updated_at，2外键，2索引）；Migration f606ac693c26 upgrade 通过；SHOW CREATE TABLE 确认 utf8mb4 + created_at DEFAULT now() | Claude |
 | 2026-05-15 | Phase 2 Step 2-0-4 完成：backend/app/models/audit_log.py 新建（7字段，business_record，无 status/version/updated_at，1外键，3索引）；Migration 3cf8a913acea upgrade 通过；SHOW CREATE TABLE 确认 utf8mb4；无 Blueprint（查询端点留 Phase 6） | Claude |
 | 2026-05-15 | Phase 2 Step 2-1-1 完成：code_generator.py 扩展新增 generate_fixture_code()（格式 [项目代号]-[型号代号]#[套号]-[版本号]，select API，NotFoundError/ValidationError 异常处理，并发安全注释）；同步修复旧函数 generate_project_code() 废弃 API（query.filter_by→select）；冒烟 4 用例全部 PASS | Claude |
+| 2026-05-15 | Phase 2 Step 2-2-1 完成：state_machine.py 新建（TRANSITIONS 12条/REJECT_CONFIG 2条/三函数）；audit_service.py 新建（log_force_action）；enums.py FixtureStatus 12状态落定；status.js 追加 FIXTURE_STATUS_MAP；§3.3 + §2 trigger 表核对一致；冒烟 5 项通过 | Claude |
+| 2026-05-16 | Phase 2 Step 2-6-1 完成：test_state_machine.py 新建（12用例全部 PASSED，含 test_no_back_door_in_transition）；conftest.py 扩展 make_fixture 工厂 fixture；state_machine.py / audit_service.py 覆盖率均 100%；顺带修复 Schema bug：fixtures.current_status / fixture_status_history.from_status / to_status 均从 VARCHAR(16) 扩展至 VARCHAR(32)（3 条 Migration de2a67838513 + 9cfc47ae4fd0 升级完成） | Claude |

@@ -17,8 +17,8 @@ class FixtureStatusHistory(db.Model):
 
     id            = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
     fixture_id    = db.Column(db.BigInteger, db.ForeignKey('fixtures.id'), nullable=False)
-    from_status   = db.Column(db.String(16), nullable=True)
-    to_status     = db.Column(db.String(16), nullable=False)
+    from_status   = db.Column(db.String(32), nullable=True)
+    to_status     = db.Column(db.String(32), nullable=False)
     trigger_type  = db.Column(db.String(32), nullable=False)
     reason        = db.Column(db.String(512), nullable=True)
     related_table = db.Column(db.String(64), nullable=True)

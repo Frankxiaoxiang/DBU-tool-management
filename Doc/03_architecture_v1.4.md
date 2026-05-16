@@ -318,7 +318,7 @@ CREATE TABLE fixtures (
   fixture_type_code     VARCHAR(16) NOT NULL,                   -- 治具型号代号，如 FB-YN
   set_no                INT NOT NULL,                           -- 套号 #N 的 N，从 1 起连续递增（《编码规则 V1.0》§2.2）
   current_version_code  VARCHAR(8) NOT NULL DEFAULT 'A1',       -- 图纸版本 A1/A2/A3/B1…；不用 ENUM，Service 层校验
-  current_status        VARCHAR(16) NOT NULL DEFAULT 'pending_iqc',  -- 12 状态机工艺流程；不用 ENUM（§e.4）
+  current_status        VARCHAR(32) NOT NULL DEFAULT 'pending_iqc',  -- 12 状态机工艺流程；最长值 concession_accepted(19字符)，不用 ENUM（§e.4）
   parent_fixture_id     BIGINT NULL,                            -- 自引用；仅"加开-复制图纸"溯源（§e.7）
   supplier_id           BIGINT NULL,                            -- 采购前未定故可空
   lead_time_days        INT NULL,
@@ -361,7 +361,7 @@ class Fixture(db.Model):
     fixture_type_code    = db.Column(db.String(16), nullable=False)
     set_no               = db.Column(db.Integer, nullable=False)
     current_version_code = db.Column(db.String(8), nullable=False, default='A1')
-    current_status       = db.Column(db.String(16), nullable=False, default='pending_iqc')
+    current_status       = db.Column(db.String(32), nullable=False, default='pending_iqc')
     parent_fixture_id    = db.Column(db.BigInteger, db.ForeignKey('fixtures.id'), nullable=True)
     supplier_id          = db.Column(db.BigInteger, db.ForeignKey('suppliers.id'), nullable=True)
     lead_time_days       = db.Column(db.Integer, nullable=True)
@@ -795,6 +795,8 @@ def test_no_back_door_in_transition():
 Phase 2 实现封存时，`fixture.is_sealed` 的写入**不走** `transition()` 函数（封存不是标准 12 状态流转），而是独立的 `seal_batch()` Service 函数，并在注释中标注"Phase 4 审批流接入后 unseal 将触发 `transition()` 的解封路径"。
 
 `transition()` 函数签名**永远不允许**加 `force` / `bypass` 参数（§e.4 铁律）。
+
+> §3.3 修订记录：Phase 2 Step 2-2-1（2026-05-15）——state_machine.py 按本节代码首次落地；audit_service.log_force_action() 新建；enums.py FixtureStatus 12状态常量落定；前端 status.js 追加 FIXTURE_STATUS_MAP。
 
 ---
 

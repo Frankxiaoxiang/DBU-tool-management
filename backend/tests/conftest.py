@@ -16,6 +16,7 @@ from app.models.project import Project  # noqa: E402
 from app.models.batch import Batch  # noqa: E402
 from app.models.fixture_template import FixtureTemplate  # noqa: E402
 from app.models.fixture_template_snapshot import FixtureTemplateSnapshot  # noqa: E402
+from app.models.fixture import Fixture  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -213,6 +214,36 @@ def seeded_manual_batch(db_session, seeded_project_with_snapshot, seeded_pm_user
     db_session.add(batch)
     db_session.flush()
     return batch
+
+
+@pytest.fixture
+def make_fixture(db_session, seeded_pm_user, seeded_manual_batch):
+    """
+    治具测试数据工厂。
+    current_status 直接构造时传入（合法的测试数据初始化，非业务流转）。
+    """
+    created = []
+
+    def _factory(current_status='pending_iqc', **kwargs):
+        f = Fixture(
+            fixture_code=f"TEST-FB-YN#1-A1-{len(created)}",
+            batch_id=seeded_manual_batch.id,
+            project_id=seeded_manual_batch.project_id,
+            fixture_type_code='FB-YN',
+            set_no=len(created) + 1,
+            current_version_code='A1',
+            current_status=current_status,
+            status='active',
+            version=0,
+            created_by=seeded_pm_user.id,
+            **kwargs
+        )
+        db_session.add(f)
+        db_session.flush()
+        created.append(f)
+        return f
+
+    return _factory
 
 
 @pytest.fixture

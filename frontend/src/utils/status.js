@@ -57,3 +57,28 @@ export function batchTypeTag(code) {
 export function batchTypeLabel(code) {
   return BATCH_TYPE_MAP[code]?.label || code
 }
+
+// ===== Fixture 治具状态（Phase 2 Step 2-2-1）=====
+
+export const FIXTURE_STATUS_MAP = {
+  pending_iqc:         { label: '待IQC检验',     type: 'warning' },
+  iqc_inspecting:      { label: 'IQC检验中',     type: 'warning' },
+  emergency_pending:   { label: '紧急上机待确认',  type: 'danger'  },
+  concession_accepted: { label: '让步接受',       type: 'warning' },
+  installing:          { label: '安装调试中',     type: 'warning' },
+  acceptance_testing:  { label: '试产验收中',     type: 'warning' },
+  in_stock:            { label: '在库',           type: 'success' },
+  in_use:              { label: '使用中',         type: 'success' },
+  maintaining:         { label: '保养中',         type: 'info'    },
+  repairing:           { label: '维修中',         type: 'danger'  },
+  sealed:              { label: '已封存',         type: 'info'    },
+  scrapped:            { label: '已报废',         type: 'danger'  },
+}
+
+export function fixtureStatusLabel(status) {
+  return FIXTURE_STATUS_MAP[status]?.label || status
+}
+
+export function fixtureStatusType(status) {
+  return FIXTURE_STATUS_MAP[status]?.type || 'info'
+}

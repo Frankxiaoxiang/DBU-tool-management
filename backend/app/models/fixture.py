@@ -29,7 +29,7 @@ class Fixture(db.Model):
     fixture_type_code    = db.Column(db.String(16), nullable=False)
     set_no               = db.Column(db.Integer, nullable=False)
     current_version_code = db.Column(db.String(8), nullable=False, default='A1')
-    current_status       = db.Column(db.String(16), nullable=False, default='pending_iqc')
+    current_status       = db.Column(db.String(32), nullable=False, default='pending_iqc')
     parent_fixture_id    = db.Column(db.BigInteger, db.ForeignKey('fixtures.id'), nullable=True)
     supplier_id          = db.Column(db.BigInteger, db.ForeignKey('suppliers.id'), nullable=True)
     lead_time_days       = db.Column(db.Integer, nullable=True)

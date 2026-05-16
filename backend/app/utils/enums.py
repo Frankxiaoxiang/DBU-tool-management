@@ -1,0 +1,13 @@
+class FixtureStatus:
+    PENDING_IQC          = 'pending_iqc'
+    IQC_INSPECTING       = 'iqc_inspecting'
+    EMERGENCY_PENDING    = 'emergency_pending'
+    CONCESSION_ACCEPTED  = 'concession_accepted'
+    INSTALLING           = 'installing'
+    ACCEPTANCE_TESTING   = 'acceptance_testing'
+    IN_STOCK             = 'in_stock'
+    IN_USE               = 'in_use'
+    MAINTAINING          = 'maintaining'
+    REPAIRING            = 'repairing'
+    SEALED               = 'sealed'
+    SCRAPPED             = 'scrapped'

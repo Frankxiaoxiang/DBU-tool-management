@@ -15,3 +15,9 @@ export function createFixture(payload) {
 export function updateFixture(id, payload) {
   return request.put(`/fixtures/${id}`, payload)
 }
+
+export function bumpFixtureVersion(id, payload) {
+  // payload: { version: <int> }
+  // 命名路由，无尾部斜杠（CLAUDE.md §h）；无 /api 前缀（baseURL 已含）
+  return request.post(`/fixtures/${id}/version-bump`, payload)
+}

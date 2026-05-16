@@ -2,7 +2,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getFixtureById, createFixture, updateFixture } from '../../api/fixture'
+import { getFixtureById, createFixture, updateFixture, bumpFixtureVersion } from '../../api/fixture'
 import { listBatches } from '../../api/batch'
 import { formatBackendTime } from '../../utils/datetime'
 import { FIXTURE_STATUS_MAP } from '../../utils/status'
@@ -141,6 +141,33 @@ async function onSubmit() {
   }
 }
 
+async function onVersionBump() {
+  const currentVer = form.current_version_code || '当前版本'
+
+  // 二段 try/catch（CLAUDE.md §d Rule 9）
+  try {
+    await ElMessageBox.confirm(
+      `确认将图纸版本从「${currentVer}」升级到下一版本？此操作不可撤销。`,
+      '图纸版本升级',
+      { type: 'warning', confirmButtonText: '确认升级', cancelButtonText: '取消' }
+    )
+  } catch { return }  // 用户取消，静默退出
+
+  try {
+    const res = await bumpFixtureVersion(route.params.id, { version: form.version })
+    // 后端返回更新后的 fixture 全字段（含新 current_version_code 和递增后 version）
+    const updated = res.data.data
+    form.current_version_code = updated.current_version_code
+    form.version = updated.version
+    ElMessage.success(`版本已升级为 ${updated.current_version_code}`)
+  } catch (err) {
+    // 409 由 api/request.js 全局拦截器处理，此处只处理其他错误
+    if (err?.response?.status !== 409) {
+      ElMessage.error(err?.response?.data?.message || '版本升级失败，请重试')
+    }
+  }
+}
+
 function fixtureStatusType(code) {
   return FIXTURE_STATUS_MAP[code]?.type || 'info'
 }
@@ -263,6 +290,14 @@ function fixtureStatusLabel(code) {
           @click="router.push(`/fixtures/${route.params.id}/edit`)"
         >
           编辑
+        </el-button>
+        <!-- 图纸版本升级按钮：仅 detail 模式 + 有权限时显示 -->
+        <el-button
+          v-if="auth.hasPermission('fixture.version_bump')"
+          type="warning"
+          @click="onVersionBump"
+        >
+          图纸版本升级
         </el-button>
         <el-button @click="router.back()">返回</el-button>
       </template>

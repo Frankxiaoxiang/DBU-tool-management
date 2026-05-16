@@ -120,9 +120,19 @@ def batch_seal():
 
 @fixtures_bp.route('/<int:fixture_id>/version-bump', methods=['POST'])
 @jwt_required()
-def version_bump(fixture_id):
-    # TODO Phase 2 Step 2-4-1
-    return error_response('Not implemented: Phase 2 Step 2-4-1', 501)
+@require_role('super_admin', 'pm', 'design_engineer')
+def version_bump_fixture(fixture_id):
+    """POST /api/fixtures/:id/version-bump — 图纸版本升级"""
+    body = request.get_json(silent=True) or {}
+    if 'version' not in body:
+        raise ValidationError('version 为必填项', field='version')
+    operator_id = int(get_jwt_identity())  # JWT identity 强转 int（§d Rule 4）
+    result = fixture_service.version_bump(
+        fixture_id=fixture_id,
+        request_version=body['version'],  # 不用 body.get('version')（§d Rule 5）
+        operator_id=operator_id,
+    )
+    return success_response(result)
 
 
 @fixtures_bp.route('/<int:fixture_id>/copy-to-batch', methods=['POST'])

@@ -188,8 +188,8 @@
 - [x] **2-3-1** fixture_service + fixtures Blueprint（6 端点实现 + 6 端点 501 占位）— 2026-05-16
 - [x] **2-3-2** FixtureList 前端列表页（T03）— 2026-05-16
 - [x] **2-3-3** FixtureForm 前端表单页（create/edit/detail 三合一）— 2026-05-16
-- [ ] 图纸版本管理（2-4-1 ~ 2-4-2）
-- [ ] 图纸版本管理（2-4-1 ~ 2-4-2）
+- [x] **2-4-1** fixture_service.version_bump() + POST /api/fixtures/:id/version-bump — 2026-05-16
+- [ ] **2-4-2** 前端 version-bump 按钮
 - [ ] 加开-复制图纸（2-5-1 ~ 2-5-2）
 - [x] **2-7-1** batch_service.seal_batch() + POST /api/fixtures/batch-seal — 2026-05-16
 
@@ -309,3 +309,4 @@
 | 2026-05-16 | Phase 2 Step 2-7-1 完成：batch_service.seal_batch() 新增（加 cancelled 守卫 + 乐观锁 + manual_init 类型校验 + mass_prod 前置批次校验 + 遍历写 is_sealed/sealed_at/sealed_by + 直接 INSERT FixtureStatusHistory trigger_type='batch_seal' + batch.version+=1）；fixtures Blueprint /batch-seal 501 占位替换为实现（@require_role('super_admin','warehouse')）；烟测 4 用例全部通过（addon_quantity→400 / cancelled→400 / version 过期→409 / 合法封存→200 sealed_count=1）；DB 验证 is_sealed=True + history 写入正确 | Claude |
 | 2026-05-16 | Phase 2 Step 2-3-2 完成：FixtureList.vue（双场景路由 A/B + 4条过滤 + 9列表格 + 4操作按钮含2占位）+ api/fixture.js（listFixtures/getFixtureById，修正 /api/ 双前缀 bug）+ 路由4条（2正式+2占位，作为 Layout children 无前导/）；FIXTURE_STATUS_MAP 复用 2-2-1；prompt 3 处 bug 修正（/api/ 双前缀 / computed 漏 import / 路由前导/）；pnpm build 通过（0 errors）；9条验收 grep 全部 PASS | Claude |
 | 2026-05-16 | Phase 2 Step 2-3-3 完成：FixtureForm.vue（create/edit/detail 三合一）+ api/fixture.js 追加 createFixture/updateFixture（修正 prompt /api/ 双前缀 + getFixtureById 重复定义 bug）+ router 新增 FixtureCreate + 替换 FixtureDetail/FixtureEdit 占位为真实组件；create 模式批次下拉+型号代号文本输入+quantity 前端循环；edit payload 含 version 乐观锁；无 :color prop（FIXTURE_STATUS_MAP 无 color 字段）；pnpm build 通过（0 errors）；8条验收 grep 全部 PASS | Claude |
+| 2026-05-16 | Phase 2 Step 2-4-1 完成：fixture_service.version_bump()（版本推进规则 A1→A2→A3→B1，auxiliary event 直写 FixtureStatusHistory）+ _next_version_code() 私有辅助函数 + fixtures Blueprint /version-bump 501 占位替换为实现（@require_role('super_admin','pm','design_engineer')）；烟测 5 用例全部通过（正常升级 A1→A2 / 乐观锁 409 / 缺 version 400 / IQC 权限 403 / history DB 验证 from=to=in_use trigger=version_bump）；10条验收 grep 全部 PASS | Claude |

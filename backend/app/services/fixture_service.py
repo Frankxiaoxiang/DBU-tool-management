@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from extensions import db
 from app.models.batch import Batch
 from app.models.fixture import Fixture
+from app.models.fixture_status_history import FixtureStatusHistory
 from app.models.project import Project
 from app.exceptions import ConflictError, ForbiddenError, NotFoundError, ValidationError
 from app.services.code_generator import generate_fixture_code
@@ -232,6 +233,71 @@ def change_fixture_status(fixture_id, trigger, operator_id, operator_role_codes,
     db.session.commit()
     db.session.refresh(fixture)
     return _serialize_item(fixture)
+
+
+def version_bump(fixture_id: int, request_version: int, operator_id: int) -> dict:
+    """
+    图纸版本升级：A1→A2→A3→B1→B2→B3→C1...
+    只改 current_version_code 字段，不新建 fixture（CLAUDE.md §e.7）。
+    成功后写一条 FixtureStatusHistory（auxiliary event，不走 state_machine.transition()）。
+    """
+    assert request_version is not None  # 乐观锁守卫（§e.5）
+
+    fixture = db.session.get(Fixture, fixture_id)  # 新 API（09_dev_rules.md 后端 #11）
+    if fixture is None:
+        raise NotFoundError(f'治具 {fixture_id} 不存在')
+
+    # 乐观锁手动校验（§e.5 / 后端 #7）
+    if fixture.version != request_version:
+        raise ConflictError(
+            '数据已被其他请求修改，请刷新后重试',
+            data={'server_version': fixture.version, 'your_version': request_version},
+        )
+
+    old_ver = fixture.current_version_code
+    new_ver = _next_version_code(old_ver)
+
+    fixture.current_version_code = new_ver
+    fixture.version += 1
+
+    # auxiliary event: bypasses state_machine.transition() by design
+    # (from_status == to_status == current_status; version diff recorded in reason)
+    history = FixtureStatusHistory(
+        fixture_id=fixture.id,
+        from_status=fixture.current_status,
+        to_status=fixture.current_status,
+        trigger_type='version_bump',
+        reason=f'图纸版本升级: {old_ver} → {new_ver}',
+        operator_id=operator_id,
+    )
+    db.session.add(history)
+    db.session.commit()
+    db.session.refresh(fixture)
+    return _serialize_item(fixture)
+
+
+def _next_version_code(current: str) -> str:
+    """
+    版本推进规则（《编码规则 V1.0》§4.2）：
+    格式 [A-Z][1-3]；数字 < 3 → 数字+1；数字 == 3 → 字母进位，数字重置为 1。
+    Z3 视为上限，抛 ValidationError。
+    """
+    if not current or len(current) < 2:
+        raise ValidationError(f'无效的版本号格式: {current!r}')
+
+    letter = current[0].upper()
+    try:
+        num = int(current[1])
+    except ValueError:
+        raise ValidationError(f'无效的版本号格式: {current!r}')
+
+    if letter == 'Z' and num == 3:
+        raise ValidationError('版本号已达上限（Z3），无法继续升级')
+
+    if num < 3:
+        return f'{letter}{num + 1}'
+    else:  # num == 3，字母进位，数字重置为 1
+        return f'{chr(ord(letter) + 1)}1'
 
 
 def force_fixture_status(fixture_id, to_status, reason, operator_id):

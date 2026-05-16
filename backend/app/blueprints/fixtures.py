@@ -137,9 +137,19 @@ def version_bump_fixture(fixture_id):
 
 @fixtures_bp.route('/<int:fixture_id>/copy-to-batch', methods=['POST'])
 @jwt_required()
-def copy_to_batch(fixture_id):
-    # TODO Phase 2 Step 2-5-1
-    return error_response('Not implemented: Phase 2 Step 2-5-1', 501)
+@require_role('super_admin', 'pm', 'design_engineer')
+def copy_fixture_to_batch(fixture_id):
+    """POST /api/fixtures/:id/copy-to-batch — 加开-复制图纸"""
+    body = request.get_json(silent=True) or {}
+    if 'target_batch_id' not in body:
+        raise ValidationError('target_batch_id 为必填项', field='target_batch_id')
+    operator_id = int(get_jwt_identity())  # JWT identity 强转 int（§d Rule 4）
+    result = fixture_service.copy_to_batch(
+        source_fixture_id=fixture_id,
+        target_batch_id=body['target_batch_id'],
+        operator_id=operator_id,
+    )
+    return success_response(result, code=201)
 
 
 @fixtures_bp.route('/<int:fixture_id>/release-seal', methods=['POST'])

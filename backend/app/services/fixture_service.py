@@ -300,6 +300,71 @@ def _next_version_code(current: str) -> str:
         return f'{chr(ord(letter) + 1)}1'
 
 
+def copy_to_batch(source_fixture_id: int, target_batch_id: int, operator_id: int) -> dict:
+    """
+    加开-复制图纸：以源治具为模板生成新 fixture。
+    - parent_fixture_id 指向源治具（仅用于溯源，§e.7）
+    - current_version_code 继承源治具当前版本（§e.7 / 《编码规则 V1.0》§4.3）
+    - fixture_code / set_no 由 generate_fixture_code() 在目标项目+型号下递增生成（Service 层不拼接编码字符串）
+    - 新 fixture 初始 current_status = 'pending_iqc'（新建赋值，不走 transition()）
+    - 本函数不修改源治具，源治具 version 不自增
+    """
+    # ── 1. 查源治具 ───────────────────────────────────────────────────────────
+    source = db.session.get(Fixture, source_fixture_id)
+    if source is None:
+        raise NotFoundError(f'源治具 {source_fixture_id} 不存在')
+    if source.status == 'cancelled':
+        raise ValidationError('源治具已作废，不可复制')
+
+    # ── 2. 查目标批次 ─────────────────────────────────────────────────────────
+    target_batch = db.session.get(Batch, target_batch_id)
+    if target_batch is None:
+        raise NotFoundError(f'目标批次 {target_batch_id} 不存在')
+    if target_batch.status == 'cancelled':
+        raise ValidationError('目标批次已作废，不可复制治具到此批次')
+
+    # ── 3. 跨项目校验 ─────────────────────────────────────────────────────────
+    if target_batch.project_id != source.project_id:
+        raise ValidationError('目标批次与源治具不属于同一个项目，禁止跨项目复制')
+
+    # ── 4. 取目标项目代号，生成新编码（套号在目标项目+型号下递增） ──────────
+    project = db.session.get(Project, target_batch.project_id)
+    if project is None:
+        raise NotFoundError('项目不存在')
+
+    # version_code 传入源治具当前版本，新编码嵌入继承版本（§e.7 / 《编码规则 V1.0》§4.3）
+    new_fixture_code = generate_fixture_code(
+        project.project_code,
+        source.fixture_type_code,
+        version_code=source.current_version_code,
+    )
+    m = _SET_NO_RE.search(new_fixture_code)
+    new_set_no = int(m.group(1)) if m else 1
+
+    # ── 5. 创建新 fixture ─────────────────────────────────────────────────────
+    new_fixture = Fixture(
+        fixture_code         =new_fixture_code,
+        batch_id             =target_batch_id,
+        project_id           =target_batch.project_id,
+        fixture_type_code    =source.fixture_type_code,
+        set_no               =new_set_no,
+        current_version_code =source.current_version_code,  # 继承源治具当前版本（§e.7）
+        current_status       ='pending_iqc',                 # 新建赋值，不走 transition()（§e.4）
+        parent_fixture_id    =source.id,                     # 溯源（§e.7，仅用于此场景）
+        status               ='active',
+        created_by           =operator_id,
+    )
+    try:
+        db.session.add(new_fixture)
+        db.session.commit()
+        db.session.refresh(new_fixture)
+    except IntegrityError:
+        db.session.rollback()
+        raise ConflictError('fixture_code 生成冲突，请重试')
+
+    return _serialize_item(new_fixture)
+
+
 def force_fixture_status(fixture_id, to_status, reason, operator_id):
     fixture = _get_or_404(fixture_id)
 

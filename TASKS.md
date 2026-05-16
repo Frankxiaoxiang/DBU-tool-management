@@ -190,7 +190,8 @@
 - [x] **2-3-3** FixtureForm 前端表单页（create/edit/detail 三合一）— 2026-05-16
 - [x] **2-4-1** fixture_service.version_bump() + POST /api/fixtures/:id/version-bump — 2026-05-16
 - [x] **2-4-2** 前端 version-bump 按钮 — 2026-05-16
-- [ ] 加开-复制图纸（2-5-1 ~ 2-5-2）
+- [x] **2-5-1** fixture_service.copy_to_batch() + POST /api/fixtures/:id/copy-to-batch — 2026-05-16
+- [ ] **2-5-2** 前端加开-复制按钮
 - [x] **2-7-1** batch_service.seal_batch() + POST /api/fixtures/batch-seal — 2026-05-16
 
 ### 2.6 单元测试覆盖
@@ -311,3 +312,4 @@
 | 2026-05-16 | Phase 2 Step 2-3-3 完成：FixtureForm.vue（create/edit/detail 三合一）+ api/fixture.js 追加 createFixture/updateFixture（修正 prompt /api/ 双前缀 + getFixtureById 重复定义 bug）+ router 新增 FixtureCreate + 替换 FixtureDetail/FixtureEdit 占位为真实组件；create 模式批次下拉+型号代号文本输入+quantity 前端循环；edit payload 含 version 乐观锁；无 :color prop（FIXTURE_STATUS_MAP 无 color 字段）；pnpm build 通过（0 errors）；8条验收 grep 全部 PASS | Claude |
 | 2026-05-16 | Phase 2 Step 2-4-1 完成：fixture_service.version_bump()（版本推进规则 A1→A2→A3→B1，auxiliary event 直写 FixtureStatusHistory）+ _next_version_code() 私有辅助函数 + fixtures Blueprint /version-bump 501 占位替换为实现（@require_role('super_admin','pm','design_engineer')）；烟测 5 用例全部通过（正常升级 A1→A2 / 乐观锁 409 / 缺 version 400 / IQC 权限 403 / history DB 验证 from=to=in_use trigger=version_bump）；10条验收 grep 全部 PASS | Claude |
 | 2026-05-16 | Phase 2 Step 2-4-2 完成：FixtureForm.vue detail 模式追加"图纸版本升级"按钮（hasPermission('fixture.version_bump') 控制 + ElMessageBox 二段 try/catch + 版本号从后端响应刷新，前端不推算 §e.7）；api/fixture.js 追加 bumpFixtureVersion（/fixtures/${id}/version-bump，无/api前缀无尾部斜杠）；pnpm build 通过（0 errors）；7条验收 grep 全部 PASS | Claude |
+| 2026-05-16 | Phase 2 Step 2-5-1 完成：fixture_service.copy_to_batch()（parent_fixture_id 溯源 + current_version_code 继承 + generate_fixture_code 传入继承版本递增套号 + 跨项目/cancelled 校验 + IntegrityError 兜底）+ fixtures Blueprint /copy-to-batch 501 占位替换为实现（@require_role('super_admin','pm','design_engineer')）；修正 prompt 4 处（generate_fixture_code 签名参数 project_code 非 project_id + 返回 str 非元组 + Batch.is_sealed 不存在 + _fixture_to_dict→_serialize_item）；烟测 6 用例全部通过（正常复制 201 SMOKE-FB-YN#2-A2 / 缺参数 400 / 跨项目 400 / IQC 403 / 源不存在 404 / DB 层 6 字段验证）；11条验收 grep 全部 PASS | Claude |

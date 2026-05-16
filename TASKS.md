@@ -11,10 +11,13 @@
 
 ✅ **Phase 0 — 基建（已完成 2026-05-10）**
 
-🟢 **Phase 1 — 项目与批次模块（进行中）**
+✅ **Phase 1 — 项目与批次模块（已完成 2026-05-14）**
 
-预计完成时间：Phase 0 完成 + 约 2 周
-当前状态：进行中
+✅ **Phase 2 — 模治具核心模块（已完成 2026-05-16）**
+
+🟢 **Phase 3 — 流程节点模块（进行中）**
+
+当前状态：未开始
 
 ---
 
@@ -166,7 +169,7 @@
 
 ## Phase 2 — 模治具核心模块
 
-🟢 进行中 | 详细参数见 [TASKS_Phase2_detail.md](./TASKS_Phase2_detail.md)（共 16 个 Step，7 个子模块）
+✅ **已完成 2026-05-16** | 详细参数见 [TASKS_Phase2_detail.md](./TASKS_Phase2_detail.md)（共 16 个 Step，7 个子模块）
 
 ### 2.0 准备（4 步）
 
@@ -191,13 +194,13 @@
 - [x] **2-4-1** fixture_service.version_bump() + POST /api/fixtures/:id/version-bump — 2026-05-16
 - [x] **2-4-2** 前端 version-bump 按钮 — 2026-05-16
 - [x] **2-5-1** fixture_service.copy_to_batch() + POST /api/fixtures/:id/copy-to-batch — 2026-05-16
-- [ ] **2-5-2** 前端加开-复制按钮
+- [x] **2-5-2** 前端加开-复制按钮 — 2026-05-16
 - [x] **2-7-1** batch_service.seal_batch() + POST /api/fixtures/batch-seal — 2026-05-16
 
 ### 2.6 单元测试覆盖
 
 - [x] **2-6-1** test_state_machine.py（T07）— 2026-05-16
-- [ ] **2-6-2** test_fixture_service.py（T07）
+- [x] **2-6-2** test_fixture_service.py（T07）— 2026-05-16
 
 ---
 
@@ -312,4 +315,7 @@
 | 2026-05-16 | Phase 2 Step 2-3-3 完成：FixtureForm.vue（create/edit/detail 三合一）+ api/fixture.js 追加 createFixture/updateFixture（修正 prompt /api/ 双前缀 + getFixtureById 重复定义 bug）+ router 新增 FixtureCreate + 替换 FixtureDetail/FixtureEdit 占位为真实组件；create 模式批次下拉+型号代号文本输入+quantity 前端循环；edit payload 含 version 乐观锁；无 :color prop（FIXTURE_STATUS_MAP 无 color 字段）；pnpm build 通过（0 errors）；8条验收 grep 全部 PASS | Claude |
 | 2026-05-16 | Phase 2 Step 2-4-1 完成：fixture_service.version_bump()（版本推进规则 A1→A2→A3→B1，auxiliary event 直写 FixtureStatusHistory）+ _next_version_code() 私有辅助函数 + fixtures Blueprint /version-bump 501 占位替换为实现（@require_role('super_admin','pm','design_engineer')）；烟测 5 用例全部通过（正常升级 A1→A2 / 乐观锁 409 / 缺 version 400 / IQC 权限 403 / history DB 验证 from=to=in_use trigger=version_bump）；10条验收 grep 全部 PASS | Claude |
 | 2026-05-16 | Phase 2 Step 2-4-2 完成：FixtureForm.vue detail 模式追加"图纸版本升级"按钮（hasPermission('fixture.version_bump') 控制 + ElMessageBox 二段 try/catch + 版本号从后端响应刷新，前端不推算 §e.7）；api/fixture.js 追加 bumpFixtureVersion（/fixtures/${id}/version-bump，无/api前缀无尾部斜杠）；pnpm build 通过（0 errors）；7条验收 grep 全部 PASS | Claude |
+| 2026-05-16 | Phase 2 全部完成（16 步全部 ✅）：治具 CRUD / 编码生成 / 状态机三函数 / 图纸版本管理 / 加开复制 / 批量封存 / FixtureList + FixtureForm 前端 / 单元测试 43 用例全通过；CLAUDE.md §c 切换至 Phase 3；当前阶段改为 Phase 3 进行中 | Claude |
+| 2026-05-16 | Phase 2 Step 2-6-2 完成：test_fixture_service.py 新建（31 用例，31 passed）；覆盖 list/create/update/change_status/force_status/version_bump/copy_to_batch/seal_batch 共 8 个函数；additional_claims 全部传递；乐观锁 409 × 3（change_status 无乐观锁设计，删除 2 个无效测试）；权限 403 × 5；test_no_back_door_in_transition 通过；fixture_service.py 覆盖率 81%；conftest 新增 warehouse/design_engineer 用户 + 5 个 seeded fixtures；修正 6 处 prompt bug（copy_to_batch 422→400 × 3、change_status wrong role/dropped × 2、savepoint expire 版本断言 × 2） | Claude |
+| 2026-05-16 | Phase 2 Step 2-5-2 完成：FixtureForm.vue detail 模式追加"加开-复制"按钮（hasPermission('fixture.copy_to_batch') 控制）+ el-dialog 目标批次选择（el-radio-group + nanoid key + 空状态文案 + copyBatchLoading/copySubmitting 双加载态）；api/fixture.js 追加 copyFixtureToBatch（/fixtures/${id}/copy-to-batch）；安装 @element-plus/icons-vue 依赖（Loading icon）；pnpm build 通过（0 errors）；9条验收 grep 全部 PASS |
 | 2026-05-16 | Phase 2 Step 2-5-1 完成：fixture_service.copy_to_batch()（parent_fixture_id 溯源 + current_version_code 继承 + generate_fixture_code 传入继承版本递增套号 + 跨项目/cancelled 校验 + IntegrityError 兜底）+ fixtures Blueprint /copy-to-batch 501 占位替换为实现（@require_role('super_admin','pm','design_engineer')）；修正 prompt 4 处（generate_fixture_code 签名参数 project_code 非 project_id + 返回 str 非元组 + Batch.is_sealed 不存在 + _fixture_to_dict→_serialize_item）；烟测 6 用例全部通过（正常复制 201 SMOKE-FB-YN#2-A2 / 缺参数 400 / 跨项目 400 / IQC 403 / 源不存在 404 / DB 层 6 字段验证）；11条验收 grep 全部 PASS | Claude |

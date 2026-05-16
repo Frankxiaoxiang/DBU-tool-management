@@ -21,3 +21,9 @@ export function bumpFixtureVersion(id, payload) {
   // 命名路由，无尾部斜杠（CLAUDE.md §h）；无 /api 前缀（baseURL 已含）
   return request.post(`/fixtures/${id}/version-bump`, payload)
 }
+
+export function copyFixtureToBatch(id, payload) {
+  // payload: { target_batch_id: <int> }
+  // 命名路由，无尾部斜杠（CLAUDE.md §h）；无 /api 前缀（baseURL 已含）
+  return request.post(`/fixtures/${id}/copy-to-batch`, payload)
+}

@@ -69,19 +69,23 @@ DBU 模治具管理系统服务于 Stoneplus Thermal Management 制造技术 / �
 
 ## c. 当前阶段
 
-**Phase 2 — 模治具核心模块（进行中）**
+**Phase 3 — 流程节点模块（未开始）**
 
 详细任务清单见 [TASKS.md](./TASKS.md)。当前阶段重点：
 
-- 治具 CRUD（Fixture Model + Migration + Service + Blueprint）
-- 编码自动生成（services/code_generator.py，遵循《编码规则 V1.0》）
-- 图纸版本管理（A1 → A2 → A3 → B1）
-- 加开-复制图纸（parent_fixture_id 溯源）
-- 状态机三函数（transition / reject / force_transition）
-- 状态历史表写入
-- 单元测试覆盖（含 test_no_back_door_in_transition）
+- 设计阶段：图纸/DFM 上传、采购申请单
+- 采购阶段：PO 头 + items 一对多
+- IQC 标准路径与紧急上机路径
+- 安装调试记录
+- 试产验收（合格/不合格分支）
+- 移交确认
+- 生产领用与归还
+- 保养触发与记录
+- 报修与维修
+- 报废申请
 
 > Phase 1 于 2026-05-14 全部完成（项目模块 / 模板快照 / 批次模块 / 封存解封规约 + 端到端联调通过）
+> Phase 2 于 2026-05-16 全部完成（治具 CRUD / 编码生成 / 状态机 / 版本管理 / 加开复制 / 批量封存 / 前端三页 / 单元测试 31 用例全通过）
 
 ---
 
@@ -459,3 +463,4 @@ db.session.commit()
 | 2026-05-14 | Phase 1 全部完成（Step 1-0-1 ~ 1-5-2）：项目模块 / 模板快照 / 批次模块 / 封存解封规约文档化 / 端到端冒烟 5 条全 PASS；§c 切换至 Phase 2；§h 新增 2 条风险行（`flask shell -c` 无效 / curl POST 尾部斜杠） | Claude |
 | 2026-05-15 | Phase 2 Step 2-0-1：Doc/04_api_spec.md §2 端点核对通过（12端点 + 15 trigger 值全部存在）；Doc/03_architecture_v1.4.md §2.3 补写 fixtures 完整 DDL（含封存/状态/乐观锁字段，Frank 三项裁决落定）；Doc/05_permissions.md §六 新增模治具端点 @require_role 映射（15行 + FIXTURE_PERMISSIONS 代码块）；Doc/00_open_questions.md 归档 Q-006/Q-007/Q-008 + 登记 Q-009（seal_batch to_status 待拍板） | Claude |
 | 2026-05-16 | Phase 2 Step 2-7-1 实战补入：§h 新增 1 条风险行（命名路由误加尾部斜杠——尾部斜杠规则仅适用 `'/'` 根路由，`/batch-seal`/`/version-bump` 等命名路由禁止加，加了反而触发 301 重定向） | Claude |
+| 2026-05-16 | Phase 2 全部完成（Step 2-0-1 ~ 2-7-1 共 16 步）：治具 CRUD / 编码生成 / 状态机三函数 / 图纸版本管理 / 加开复制 / 批量封存 / FixtureList + FixtureForm 前端 / test_state_machine + test_fixture_service 单元测试（31+12 用例全通过）；§c 切换至 Phase 3 | Claude |

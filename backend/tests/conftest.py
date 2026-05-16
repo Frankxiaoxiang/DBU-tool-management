@@ -247,7 +247,44 @@ def make_fixture(db_session, seeded_pm_user, seeded_manual_batch):
 
 
 @pytest.fixture
-def auth_headers(seeded_pm_user, seeded_iqc_user, seeded_super_admin_user):
+def seeded_warehouse_user(db_session):
+    role = Role(code='warehouse', name='仓库管理员')
+    db_session.add(role)
+    db_session.flush()
+    user = User(
+        username='warehouse_test',
+        password_hash=generate_password_hash('Test1234!'),
+        full_name='测试仓库',
+        email='warehouse@test.com',
+        is_active=True,
+    )
+    user.roles.append(role)
+    db_session.add(user)
+    db_session.flush()
+    return user
+
+
+@pytest.fixture
+def seeded_design_engineer_user(db_session):
+    role = Role(code='design_engineer', name='设计工程师')
+    db_session.add(role)
+    db_session.flush()
+    user = User(
+        username='de_test',
+        password_hash=generate_password_hash('Test1234!'),
+        full_name='测试设计师',
+        email='de@test.com',
+        is_active=True,
+    )
+    user.roles.append(role)
+    db_session.add(user)
+    db_session.flush()
+    return user
+
+
+@pytest.fixture
+def auth_headers(seeded_pm_user, seeded_iqc_user, seeded_super_admin_user,
+                 seeded_warehouse_user, seeded_design_engineer_user):
     """各角色 JWT headers；additional_claims 必须含 role_codes，与 require_role 装饰器对齐。"""
     return {
         'pm': {
@@ -268,4 +305,128 @@ def auth_headers(seeded_pm_user, seeded_iqc_user, seeded_super_admin_user):
                 additional_claims={'role_codes': ['super_admin']},
             ),
         },
+        'warehouse': {
+            'Authorization': 'Bearer ' + create_access_token(
+                identity=str(seeded_warehouse_user.id),
+                additional_claims={'role_codes': ['warehouse']},
+            ),
+        },
+        'design_engineer': {
+            'Authorization': 'Bearer ' + create_access_token(
+                identity=str(seeded_design_engineer_user.id),
+                additional_claims={'role_codes': ['design_engineer']},
+            ),
+        },
     }
+
+
+# ---------------------------------------------------------------------------
+# Phase 2 Step 2-6-2 — fixture service 测试所需种子数据
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def seeded_batch(seeded_manual_batch):
+    """seeded_manual_batch 的别名（manual_init, status=draft）。"""
+    return seeded_manual_batch
+
+
+@pytest.fixture
+def seeded_fixture(db_session, seeded_batch, seeded_pm_user):
+    """seeded_batch 下的治具（version_code=A1, status=pending_iqc）。"""
+    f = Fixture(
+        fixture_code='SNAP-FB-YN#1-A1',
+        batch_id=seeded_batch.id,
+        project_id=seeded_batch.project_id,
+        fixture_type_code='FB-YN',
+        set_no=1,
+        current_version_code='A1',
+        current_status='pending_iqc',
+        status='active',
+        version=0,
+        created_by=seeded_pm_user.id,
+    )
+    db_session.add(f)
+    db_session.flush()
+    return f
+
+
+@pytest.fixture
+def seeded_fixture_a3(db_session, seeded_batch, seeded_pm_user):
+    """seeded_batch 下的治具（version_code=A3，供 A3→B1 版本升级用例使用）。"""
+    f = Fixture(
+        fixture_code='SNAP-FB-YN#2-A3',
+        batch_id=seeded_batch.id,
+        project_id=seeded_batch.project_id,
+        fixture_type_code='FB-YN',
+        set_no=2,
+        current_version_code='A3',
+        current_status='pending_iqc',
+        status='active',
+        version=0,
+        created_by=seeded_pm_user.id,
+    )
+    db_session.add(f)
+    db_session.flush()
+    return f
+
+
+@pytest.fixture
+def seeded_mass_prod_batch(db_session, seeded_project_with_snapshot, seeded_pm_user):
+    """同项目 mass_prod 批次（status=in_progress），供 seal_batch 前置校验使用。"""
+    batch = Batch(
+        project_id=seeded_project_with_snapshot.id,
+        batch_no=f'{seeded_project_with_snapshot.project_code}-MP-1',
+        batch_type='mass_prod',
+        flow_path='full',
+        status='in_progress',
+        created_by=seeded_pm_user.id,
+        version=0,
+    )
+    db_session.add(batch)
+    db_session.flush()
+    return batch
+
+
+@pytest.fixture
+def seeded_target_batch(db_session, seeded_project_with_snapshot, seeded_pm_user):
+    """同项目第二个 manual_init 批次，供 copy_to_batch 目标批次使用。"""
+    batch = Batch(
+        project_id=seeded_project_with_snapshot.id,
+        batch_no=f'{seeded_project_with_snapshot.project_code}-M0-2',
+        batch_type='manual_init',
+        flow_path='full',
+        status='draft',
+        created_by=seeded_pm_user.id,
+        version=0,
+    )
+    db_session.add(batch)
+    db_session.flush()
+    return batch
+
+
+@pytest.fixture
+def seeded_cross_project_batch(db_session, seeded_pm_user):
+    """跨项目批次（不同 project），用于 copy_to_batch 跨项目 400 用例。"""
+    other_project = Project(
+        project_code='XPRJ',
+        project_name='跨项目测试',
+        product_type='SUS_VC',
+        project_owner_id=seeded_pm_user.id,
+        status='active',
+        created_by=seeded_pm_user.id,
+        version=0,
+    )
+    db_session.add(other_project)
+    db_session.flush()
+    batch = Batch(
+        project_id=other_project.id,
+        batch_no='XPRJ-M0-1',
+        batch_type='manual_init',
+        flow_path='full',
+        status='draft',
+        created_by=seeded_pm_user.id,
+        version=0,
+    )
+    db_session.add(batch)
+    db_session.flush()
+    return batch

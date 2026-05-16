@@ -2,11 +2,13 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getFixtureById, createFixture, updateFixture, bumpFixtureVersion } from '../../api/fixture'
+import { getFixtureById, createFixture, updateFixture, bumpFixtureVersion, copyFixtureToBatch } from '../../api/fixture'
 import { listBatches } from '../../api/batch'
 import { formatBackendTime } from '../../utils/datetime'
 import { FIXTURE_STATUS_MAP } from '../../utils/status'
 import { useAuthStore } from '../../stores/auth'
+import { nanoid } from 'nanoid'
+import { Loading } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -32,6 +34,7 @@ const form = reactive({
   fixture_code:         '',
   current_version_code: '',
   current_status:       '',
+  project_id:           null,  // 供加开-复制时过滤同项目批次
 })
 
 // create 模式：批次下拉数据源
@@ -77,6 +80,7 @@ onMounted(async () => {
     form.current_version_code = d.current_version_code  // 只读展示
     form.current_status       = d.current_status        // 只读展示
     form.version              = d.version               // 乐观锁必须继承（§e.5）
+    form.project_id           = d.project_id            // 供加开-复制过滤同项目批次
   } catch (err) {
     if (err?.response?.status !== 409) {
       ElMessage.error(err?.response?.data?.message || '加载失败')
@@ -165,6 +169,65 @@ async function onVersionBump() {
     if (err?.response?.status !== 409) {
       ElMessage.error(err?.response?.data?.message || '版本升级失败，请重试')
     }
+  }
+}
+
+// ── 加开-复制图纸 ─────────────────────────────────────────────────────────────
+const copyDialogVisible = ref(false)
+const copyBatchLoading  = ref(false)
+const copySubmitting    = ref(false)
+const batchOptions      = ref([])   // 同项目下可选批次列表
+const selectedBatchId   = ref(null)
+
+async function openCopyDialog() {
+  copyBatchLoading.value = true
+  selectedBatchId.value  = null
+  try {
+    const res = await listBatches({ project_id: form.project_id, per_page: 100 })
+    const items = res.data.data?.items ?? []
+    batchOptions.value = items
+      .filter(b => b.status !== 'cancelled')
+      .map(b => ({ ...b, _temp_id: nanoid() }))  // nanoid 生成 key（Rule 10）
+  } catch {
+    ElMessage.error('加载批次列表失败')
+    return
+  } finally {
+    copyBatchLoading.value = false
+  }
+  copyDialogVisible.value = true
+}
+
+async function onCopyConfirm() {
+  if (!selectedBatchId.value) {
+    ElMessage.warning('请选择目标批次')
+    return
+  }
+
+  // 二段 try/catch（CLAUDE.md §d Rule 9）
+  try {
+    await ElMessageBox.confirm(
+      `确认将治具「${form.fixture_code}」复制到所选批次？将生成一套新治具，图纸版本继承「${form.current_version_code}」。`,
+      '加开-复制确认',
+      { type: 'warning', confirmButtonText: '确认复制', cancelButtonText: '取消' }
+    )
+  } catch { return }  // 用户取消，静默退出
+
+  copySubmitting.value = true
+  try {
+    const res = await copyFixtureToBatch(route.params.id, {
+      target_batch_id: selectedBatchId.value,
+    })
+    const newFixture = res.data.data
+    // 新治具编码由后端返回，前端不拼接（§e.7）
+    ElMessage.success(`复制成功，新治具编码：${newFixture.fixture_code}`)
+    copyDialogVisible.value = false
+    router.push(`/fixtures/${newFixture.id}`)
+  } catch (err) {
+    if (err?.response?.status !== 409) {
+      ElMessage.error(err?.response?.data?.message || '复制失败，请重试')
+    }
+  } finally {
+    copySubmitting.value = false
   }
 }
 
@@ -299,9 +362,43 @@ function fixtureStatusLabel(code) {
         >
           图纸版本升级
         </el-button>
+        <!-- 加开-复制按钮：仅 detail 模式 + 有权限时显示 -->
+        <el-button
+          v-if="auth.hasPermission('fixture.copy_to_batch')"
+          type="primary"
+          @click="openCopyDialog"
+        >
+          加开-复制
+        </el-button>
         <el-button @click="router.back()">返回</el-button>
       </template>
     </div>
+
+    <!-- 加开-复制对话框 -->
+    <el-dialog v-model="copyDialogVisible" title="选择目标批次" width="480px" :close-on-click-modal="false">
+      <div v-if="copyBatchLoading" style="text-align: center; padding: 20px;">
+        <el-icon class="is-loading"><Loading /></el-icon> 加载中…
+      </div>
+      <el-radio-group v-else v-model="selectedBatchId" style="display: flex; flex-direction: column; gap: 8px;">
+        <el-radio v-for="b in batchOptions" :key="b._temp_id" :value="b.id">
+          {{ b.batch_no }}
+          <el-tag
+            :type="b.status === 'draft' ? 'info' : b.status === 'confirmed' ? 'warning' : 'success'"
+            size="small" style="margin-left: 8px;">
+            {{ b.status }}
+          </el-tag>
+        </el-radio>
+      </el-radio-group>
+      <div v-if="!copyBatchLoading && batchOptions.length === 0" style="color: #999; text-align: center; padding: 16px;">
+        暂无可选批次（同项目下无有效批次）
+      </div>
+      <template #footer>
+        <el-button @click="copyDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="copySubmitting" :disabled="!selectedBatchId" @click="onCopyConfirm">
+          确认复制
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 

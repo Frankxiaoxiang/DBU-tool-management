@@ -90,18 +90,22 @@ const routes = [
         component: () => import('../views/fixture/FixtureList.vue'),
       },
       {
-        // 注意：fixtures/new 如需新建入口，须在 fixtures/:id 之前注册（防止 'new' 被动态参数捕获）
-        // 详情页：Step 2-3-3 完成后替换为 FixtureForm.vue
+        // 注意：fixtures/new 必须在 fixtures/:id 之前，防止 'new' 被动态参数捕获
+        path: 'fixtures/new',
+        name: 'FixtureCreate',
+        component: () => import('../views/fixture/FixtureForm.vue'),
+        meta: { mode: 'create' },
+      },
+      {
         path: 'fixtures/:id',
         name: 'FixtureDetail',
-        component: () => import('../views/fixture/FixtureList.vue'),
+        component: () => import('../views/fixture/FixtureForm.vue'),
         meta: { mode: 'detail' },
       },
       {
-        // 编辑页：Step 2-3-3 完成后替换为 FixtureForm.vue
         path: 'fixtures/:id/edit',
         name: 'FixtureEdit',
-        component: () => import('../views/fixture/FixtureList.vue'),
+        component: () => import('../views/fixture/FixtureForm.vue'),
         meta: { mode: 'edit' },
       },
     ],

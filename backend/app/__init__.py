@@ -76,6 +76,9 @@ def create_app(config_name=None):
     from app.blueprints.purchase_requisitions import purchase_requisitions_bp
     app.register_blueprint(purchase_requisitions_bp, url_prefix='/api/purchase-requisitions')
 
+    from app.blueprints.purchase_orders import purchase_orders_bp
+    app.register_blueprint(purchase_orders_bp, url_prefix='/api/purchase-orders')
+
     # ⑥ 全局 errorhandler
     _register_error_handlers(app)
 

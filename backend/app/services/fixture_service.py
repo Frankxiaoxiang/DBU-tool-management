@@ -271,6 +271,34 @@ def version_bump(fixture_id: int, request_version: int, operator_id: int) -> dic
         operator_id=operator_id,
     )
     db.session.add(history)
+
+    # ★ Phase 3 回填：版本升级后自动创建新版本 Drawing 占位记录（is_copied=True 同一事务）
+    # 若治具尚无图纸（新建治具直接升级场景），latest_drawing 为 None，跳过追加
+    from app.models.drawing import Drawing
+    from sqlalchemy import select, desc as _desc
+    latest_drawing_stmt = (
+        select(Drawing)
+        .where(Drawing.fixture_id == fixture.id)
+        .order_by(_desc(Drawing.created_at))
+        .limit(1)
+    )
+    latest_drawing = db.session.execute(latest_drawing_stmt).scalar_one_or_none()
+    if latest_drawing:
+        carry_drawing = Drawing(
+            fixture_id=fixture.id,
+            version_code=fixture.current_version_code,
+            drawing_type=latest_drawing.drawing_type,
+            file_path=latest_drawing.file_path,
+            acceptance_standard=latest_drawing.acceptance_standard,
+            bom_info=latest_drawing.bom_info,
+            is_copied=True,
+            source_drawing_id=latest_drawing.id,
+            uploaded_by=operator_id,
+            confirmed_by=None,
+            confirmed_at=None,
+        )
+        db.session.add(carry_drawing)
+
     db.session.commit()
     db.session.refresh(fixture)
     return _serialize_item(fixture)

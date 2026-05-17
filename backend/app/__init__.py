@@ -70,6 +70,12 @@ def create_app(config_name=None):
     from app.blueprints.files import files_bp
     app.register_blueprint(files_bp, url_prefix='/api/files')
 
+    from app.blueprints.drawings import drawings_bp
+    app.register_blueprint(drawings_bp, url_prefix='/api/drawings')
+
+    from app.blueprints.purchase_requisitions import purchase_requisitions_bp
+    app.register_blueprint(purchase_requisitions_bp, url_prefix='/api/purchase-requisitions')
+
     # ⑥ 全局 errorhandler
     _register_error_handlers(app)
 

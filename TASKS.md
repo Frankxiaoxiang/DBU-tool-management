@@ -219,7 +219,7 @@
 ### 3.1 设计阶段：图纸/DFM 上传、采购申请单
 
 - [x] **3-1-1** Drawing + PurchaseRequisition Models + Migration（T01）— 2026-05-17
-- [ ] **3-1-2** drawing_service + purchase_requisition_service + Blueprint（T02，含 version_bump 联动回填）
+- [x] **3-1-2** drawing_service + purchase_requisition_service + Blueprint（T02，含 version_bump 联动回填）— 2026-05-17
 
 ### 3.2 采购阶段：PO 头 + items 一对多
 

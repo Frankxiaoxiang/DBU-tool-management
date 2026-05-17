@@ -223,7 +223,7 @@
 
 ### 3.2 采购阶段：PO 头 + items 一对多
 
-- [ ] **3-2-1** PurchaseOrder + PurchaseOrderItem Models + Migration（T01）
+- [x] **3-2-1** PurchaseOrder + PurchaseOrderItem Models + Migration（T01）— 2026-05-17
 - [ ] **3-2-2** purchase_order_service + Blueprint（T02）
 
 ### 3.3 回厂与 IQC：标准路径 + 紧急上机路径

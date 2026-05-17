@@ -1528,6 +1528,10 @@
 
 ### 5.1 采购订单（无 DELETE，一对多结构：PO 头 + items）
 
+> **架构决策（2026-05-17）**：
+> - `fixture_id` 在 **items 明细表**（一 PO 可含多个治具），不在 PO 头表（Frank 确认，差异 1 方案 B）
+> - `planned_delivery_date` 字段已删除（Q-012 Frank 决策 A：Phase 3 仅存 `order_date`，计划日期推算留 Phase 5）
+
 ---
 
 #### POST /api/purchase-orders
@@ -1539,13 +1543,12 @@
 
 | 字段 | 类型 | 必填 | 约束 |
 |------|------|------|------|
-| `fixture_id` | int | 是 | 关联治具 ID（Phase 3：一 PO 一治具） |
 | `supplier_id` | int | 是 | 供应商 ID |
 | `contract_no` | string | 否 | 合同号 |
 | `order_date` | string | 是 | 下单日期 ISO 8601 |
-| `planned_delivery_date` | string | 是 | 约定交期 ISO 8601 |
+| `total_lead_time_days` | int | 否 | 总交期（天数） |
 | `total_amount` | decimal | 否 | 合同总金额（元），留空待 items 汇总 |
-| `remark` | string | 否 | |
+| `remark` | string | 否 | 备注 |
 
 **响应 201**
 ```json
@@ -1554,11 +1557,13 @@
   "message": "success",
   "data": {
     "id": 1,
-    "fixture_id": 10,
+    "po_no": "PO-20260517-0001",
     "supplier_id": 2,
     "contract_no": "PO-2026-001",
     "order_date": "2026-05-17",
-    "planned_delivery_date": "2026-06-30",
+    "total_lead_time_days": 30,
+    "total_amount": null,
+    "remark": null,
     "status": "open",
     "created_by": 8,
     "version": 0,
@@ -1571,27 +1576,23 @@
 
 | HTTP | message |
 |------|---------|
-| 400 | fixture_id / supplier_id / order_date / planned_delivery_date 均为必填项 |
-| 404 | 治具不存在 / 供应商不存在 |
-
-> ⚠️ 计划日期推算归属见 Q-012（待确认）。Phase 3 暂只存采购下单日，不自动推算后续节点计划日期。
+| 400 | supplier_id / order_date 为必填项 |
+| 404 | 供应商不存在 |
 
 ---
 
 #### POST /api/purchase-orders/:id/items
 
-**说明**：在 PO 下新增明细项
+**说明**：在 PO 下新增明细项（一 item 一治具）
 **Auth**：`@require_role: super_admin, purchaser`
 
 **请求体字段**
 
 | 字段 | 类型 | 必填 | 约束 |
 |------|------|------|------|
-| `item_name` | string | 是 | 明细项描述 |
-| `quantity` | int | 是 | 数量，≥ 1 |
-| `unit_price` | decimal | 是 | 单价（元） |
-| `unit` | string | 否 | 单位，默认"套" |
-| `remark` | string | 否 | |
+| `fixture_id` | int | 是 | 关联治具 ID |
+| `unit_price` | decimal | 否 | 单价（元） |
+| `item_lead_time_days` | int | 否 | 本项交期（天数） |
 
 **响应 201**
 ```json
@@ -1601,11 +1602,9 @@
   "data": {
     "id": 1,
     "purchase_order_id": 1,
-    "item_name": "SUS VC 压合治具主体",
-    "quantity": 1,
+    "fixture_id": 10,
     "unit_price": "8500.00",
-    "unit": "套",
-    "line_total": "8500.00",
+    "item_lead_time_days": 30,
     "created_at": "2026-05-17T09:10:00+08:00"
   }
 }
@@ -1615,9 +1614,8 @@
 
 | HTTP | message |
 |------|---------|
-| 400 | item_name / quantity / unit_price 均为必填项 |
-| 400 | quantity 必须 ≥ 1 |
-| 404 | 采购订单不存在 |
+| 400 | fixture_id 为必填项 |
+| 404 | 采购订单不存在 / 治具不存在 |
 
 ---
 
@@ -1633,24 +1631,28 @@
   "message": "success",
   "data": {
     "id": 1,
-    "fixture_id": 10,
+    "po_no": "PO-20260517-0001",
     "supplier_id": 2,
     "supplier_name": "KFS",
     "contract_no": "PO-2026-001",
     "order_date": "2026-05-17",
-    "planned_delivery_date": "2026-06-30",
-    "status": "open",
+    "total_lead_time_days": 30,
     "total_amount": "8500.00",
+    "remark": null,
+    "status": "open",
+    "cancel_reason": null,
+    "cancelled_at": null,
+    "cancelled_by": null,
     "created_by": 8,
     "version": 0,
     "items": [
       {
         "id": 1,
-        "item_name": "SUS VC 压合治具主体",
-        "quantity": 1,
+        "purchase_order_id": 1,
+        "fixture_id": 10,
         "unit_price": "8500.00",
-        "unit": "套",
-        "line_total": "8500.00"
+        "item_lead_time_days": 30,
+        "created_at": "2026-05-17T09:10:00+08:00"
       }
     ],
     "created_at": "2026-05-17T09:00:00+08:00"

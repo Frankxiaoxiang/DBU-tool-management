@@ -11,5 +11,7 @@ from .fixture_status_history import FixtureStatusHistory
 from .audit_log import AuditLog
 from .drawing import Drawing
 from .purchase_requisition import PurchaseRequisition
+from .purchase_order import PurchaseOrder
+from .purchase_order_item import PurchaseOrderItem
 
-__all__ = ['User', 'Role', 'SystemDict', 'Supplier', 'FixtureTemplate', 'Project', 'FixtureTemplateSnapshot', 'Batch', 'Fixture', 'FixtureStatusHistory', 'AuditLog', 'Drawing', 'PurchaseRequisition']
+__all__ = ['User', 'Role', 'SystemDict', 'Supplier', 'FixtureTemplate', 'Project', 'FixtureTemplateSnapshot', 'Batch', 'Fixture', 'FixtureStatusHistory', 'AuditLog', 'Drawing', 'PurchaseRequisition', 'PurchaseOrder', 'PurchaseOrderItem']

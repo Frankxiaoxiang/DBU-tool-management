@@ -206,3 +206,60 @@ const FIXTURE_PERMISSIONS = {
   'fixture.recalc_dates':  ['super_admin', 'pm'],
 }
 ```
+
+---
+
+## 七、Phase 3 流程节点端点权限（@require_role 映射）
+
+> **说明**：本节是后端 `@require_role()` 装饰器的单一真实来源，前端 `permissions.js` 按钮级权限派生自此表。凡实现端点必须严格对照本节标注。
+
+| 端点 | 方法 | @require_role（允许角色） | 备注 |
+|------|------|--------------------------|------|
+| `/api/drawings` | POST | `super_admin`, `design_engineer` | 图纸/DFM 上传 |
+| `/api/drawings/:id` | GET | 任意已登录用户 | 宽视图 |
+| `/api/purchase-requisitions` | POST | `super_admin`, `design_engineer`, `pm` | 采购申请单（PM 可确认发起） |
+| `/api/purchase-requisitions/:id` | GET | 任意已登录用户 | 宽视图 |
+| `/api/purchase-orders` | POST | `super_admin`, `purchaser` | 采购下单 |
+| `/api/purchase-orders/:id` | GET | 任意已登录用户 | 宽视图（含明细项） |
+| `/api/purchase-orders/:id/items` | POST | `super_admin`, `purchaser` | 录入 PO 明细 |
+| `/api/goods-receipts` | POST | `super_admin`, `warehouse` | 到货签收 |
+| `/api/goods-receipts/:id` | GET | 任意已登录用户 | 宽视图 |
+| `/api/iqc-reports` | POST | `super_admin`, `iqc` | IQC 检验结果录入 |
+| `/api/iqc-reports/:id` | GET | 任意已登录用户 | 宽视图 |
+| `/api/emergency-auth-records` | POST | `super_admin`, `pm`, `iqc` | 紧急上机授权单（PM + IQC 双方授权） |
+| `/api/emergency-auth-records/:id` | GET | 任意已登录用户 | 宽视图 |
+| `/api/install-records` | POST | `super_admin`, `me` | ME 安装调试记录 |
+| `/api/install-records/:id` | GET | 任意已登录用户 | 宽视图 |
+| `/api/acceptance-reports` | POST | `super_admin`, `iqc`, `me`, `design_engineer` | 试产验收报告（IQC/ME/设计工程师联合录入） |
+| `/api/acceptance-reports/:id` | GET | 任意已登录用户 | 宽视图 |
+| `/api/handover-records` | POST | `super_admin`, `warehouse` | 移交确认 |
+| `/api/handover-records/:id` | GET | 任意已登录用户 | 宽视图 |
+| `/api/checkout-records` | POST | `super_admin`, `production_lead` | 领用 / 归还操作 |
+| `/api/checkout-records/:id` | GET | 任意已登录用户 | 宽视图 |
+| `/api/maintenance-records` | POST | `super_admin`, `me` | 保养执行记录 |
+| `/api/maintenance-records/:id` | GET | 任意已登录用户 | 宽视图 |
+| `/api/repair-records` | POST | `super_admin`, `me` | 维修记录（含费用字段） |
+| `/api/repair-records/:id` | GET | 任意已登录用户 | 宽视图 |
+| `/api/scrap-records` | POST | `super_admin`, `pm` | 报废申请发起 |
+| `/api/scrap-records/:id` | GET | 任意已登录用户 | 宽视图 |
+| `/api/attachments` | POST | 任意已登录用户 | 补充附件上传，操作权限由业务层保障 |
+
+**前端 `permissions.js` 派生规则（供 Phase 3 前端 Step 参考）：**
+```javascript
+const FLOW_PERMISSIONS = {
+  'drawing.upload':             ['super_admin', 'design_engineer'],
+  'purchase_req.create':        ['super_admin', 'design_engineer', 'pm'],
+  'purchase_order.create':      ['super_admin', 'purchaser'],
+  'purchase_order.add_item':    ['super_admin', 'purchaser'],
+  'goods_receipt.create':       ['super_admin', 'warehouse'],
+  'iqc_report.create':          ['super_admin', 'iqc'],
+  'emergency_auth.create':      ['super_admin', 'pm', 'iqc'],
+  'install_record.create':      ['super_admin', 'me'],
+  'acceptance_report.create':   ['super_admin', 'iqc', 'me', 'design_engineer'],
+  'handover_record.create':     ['super_admin', 'warehouse'],
+  'checkout_record.create':     ['super_admin', 'production_lead'],
+  'maintenance_record.create':  ['super_admin', 'me'],
+  'repair_record.create':       ['super_admin', 'me'],
+  'scrap_record.create':        ['super_admin', 'pm'],
+}
+```

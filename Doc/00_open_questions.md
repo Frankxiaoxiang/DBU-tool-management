@@ -99,6 +99,66 @@
 
 ---
 
+### Q-010：移交确认（handover-records）与状态机的关系
+
+- **提出日期**：2026-05-17
+- **背景**：§3.3 `TRANSITIONS` 中 `acceptance_pass` trigger 直接将状态从 `ACCEPTANCE_TESTING` 流转到 `IN_STOCK`，未定义"待移交"中间态。移交确认单（`handover-records`）当前 spec 暂定为"仅作业务单据，不触发状态变更"。
+- **影响范围**：`Doc/04_api_spec.md` §3 `handover-records` 端点说明；`state_machine.py` TRANSITIONS 是否需要新增 `ACCEPTANCE_TESTING → AWAITING_HANDOVER → IN_STOCK` 两跳路径；前端流程节点页面展示逻辑
+- **可选方案**：
+  - A. 保持现状：移交确认仅作业务单据（记录移交动作），状态机维持 `acceptance_pass` 直接 `→ IN_STOCK`（简单，无中间态，**推荐**）
+  - B. 新增"验收合格-待移交"中间态（`AWAITING_HANDOVER`），移交确认后才流转 `→ IN_STOCK`（语义更严谨，但状态机复杂度增加，需同步改 5 处）
+- **责任确认方**：Frank（Phase 3 Step 3-1 开始前必须关闭）
+- **状态**：🟡 待确认
+- **确认结果**：
+- **关闭日期**：
+
+---
+
+### Q-011：单据 POST 与状态流转是否维持解耦
+
+- **提出日期**：2026-05-17
+- **背景**：当前 `Doc/04_api_spec.md` §3 设计原则为：业务单据 POST（如 `iqc-reports`、`checkout-records`）与状态流转（`PATCH /api/fixtures/:id/status`）解耦，由前端/业务层按顺序调用两个接口。此设计遵循 §e.4「状态变更唯一入口」铁律。但存在原子性风险：单据 POST 成功后状态变更失败，数据不一致。
+- **影响范围**：所有 Phase 3 业务单据 Blueprint 实现方式；是否需要数据库事务包裹"单据插入 + 状态变更"两步
+- **可选方案**：
+  - A. 维持解耦（现方案）：单据 POST 和状态 PATCH 各自独立，前端顺序调用；实现简单，符合 §e.4（**推荐**）
+  - B. 单据 POST 内联调用状态机（原子性强）：在 Service 层一个事务内同时写单据 + 调用 `transition()`；需明确哪些单据强依赖状态流转（到货签收→pending_iqc、领用→in_use 等）
+- **责任确认方**：Frank（Phase 3 Step 3-1 开始前必须关闭）
+- **状态**：🟡 待确认
+- **确认结果**：
+- **关闭日期**：
+
+---
+
+### Q-012：PO 下单时是否自动推算各节点计划日期
+
+- **提出日期**：2026-05-17
+- **背景**：`Doc/03_architecture_v1.4.md` §4.3 描述"采购下单时自动推算各节点计划日期"（基于 LT 默认值）。但 `TASKS.md` 将"计划日期推算与级联重算"明确列在 Phase 5。Phase 3 PO 步骤是否需要触发推算逻辑，还是仅存采购下单日，计划日期字段暂为 null？
+- **影响范围**：`purchase_order_service.create()` 是否调用 `recalc_dates()`；Phase 5 的计划日期推算模块实现时序
+- **可选方案**：
+  - A. Phase 3 PO 仅存采购下单日，计划日期推算完全留 Phase 5（**推荐**，与 TASKS.md 一致，避免 Phase 3 引入 LT 计算复杂度）
+  - B. Phase 3 PO 下单时触发简化版推算（只算交期，不做级联）；Phase 5 再完善级联重算
+- **责任确认方**：Frank（Phase 3 Step 3-2 开始前必须关闭）
+- **状态**：🟡 待确认
+- **确认结果**：
+- **关闭日期**：
+
+---
+
+### Q-013：货架/库位是否作为 fixtures 表的活属性字段
+
+- **提出日期**：2026-05-17
+- **背景**：移交确认（`handover-records`）和领用归还（`checkout-records`）都涉及货架/库位信息。当前 `fixtures` 表 DDL（见 `Doc/03_architecture_v1.4.md` §2.3）未包含 `shelf_location` 字段。保养记录需要知道治具当前存放位置。
+- **影响范围**：`fixtures` 表是否新增 `shelf_location` / `current_location` 字段（需新增 Migration）；Phase 5 仓储管理模块设计
+- **可选方案**：
+  - A. 将 `shelf_location` 作为 `fixtures` 表的活属性字段，每次入库/移交时更新（读性能好，位置始终可查；需 Migration）
+  - B. 库位仅记录在 `handover-records` / `checkout-records` 业务单据中，不写回 fixtures 表（写逻辑简单，但查治具当前位置需 JOIN 单据表取最新记录）
+- **责任确认方**：Frank（Phase 3 Step 3-5 仓储相关 Step 开始前必须关闭）
+- **状态**：🟡 待确认
+- **确认结果**：
+- **关闭日期**：
+
+---
+
 ## 已关闭问题（归档）
 
 | # | 提出日期 | 问题描述 | 确认方 | 确认结果 | 关闭日期 |

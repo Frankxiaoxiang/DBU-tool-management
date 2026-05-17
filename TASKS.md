@@ -17,7 +17,9 @@
 
 🟢 **Phase 3 — 流程节点模块（进行中）**
 
-当前状态：未开始
+### 3.0 文档先行
+
+- [x] Step 3-0-1：API spec §3/§5/§6 补全 + 流程节点权限矩阵补全 — 2026-05-17
 
 ---
 
@@ -319,3 +321,4 @@
 | 2026-05-16 | Phase 2 Step 2-6-2 完成：test_fixture_service.py 新建（31 用例，31 passed）；覆盖 list/create/update/change_status/force_status/version_bump/copy_to_batch/seal_batch 共 8 个函数；additional_claims 全部传递；乐观锁 409 × 3（change_status 无乐观锁设计，删除 2 个无效测试）；权限 403 × 5；test_no_back_door_in_transition 通过；fixture_service.py 覆盖率 81%；conftest 新增 warehouse/design_engineer 用户 + 5 个 seeded fixtures；修正 6 处 prompt bug（copy_to_batch 422→400 × 3、change_status wrong role/dropped × 2、savepoint expire 版本断言 × 2） | Claude |
 | 2026-05-16 | Phase 2 Step 2-5-2 完成：FixtureForm.vue detail 模式追加"加开-复制"按钮（hasPermission('fixture.copy_to_batch') 控制）+ el-dialog 目标批次选择（el-radio-group + nanoid key + 空状态文案 + copyBatchLoading/copySubmitting 双加载态）；api/fixture.js 追加 copyFixtureToBatch（/fixtures/${id}/copy-to-batch）；安装 @element-plus/icons-vue 依赖（Loading icon）；pnpm build 通过（0 errors）；9条验收 grep 全部 PASS |
 | 2026-05-16 | Phase 2 Step 2-5-1 完成：fixture_service.copy_to_batch()（parent_fixture_id 溯源 + current_version_code 继承 + generate_fixture_code 传入继承版本递增套号 + 跨项目/cancelled 校验 + IntegrityError 兜底）+ fixtures Blueprint /copy-to-batch 501 占位替换为实现（@require_role('super_admin','pm','design_engineer')）；修正 prompt 4 处（generate_fixture_code 签名参数 project_code 非 project_id + 返回 str 非元组 + Batch.is_sealed 不存在 + _fixture_to_dict→_serialize_item）；烟测 6 用例全部通过（正常复制 201 SMOKE-FB-YN#2-A2 / 缺参数 400 / 跨项目 400 / IQC 403 / 源不存在 404 / DB 层 6 字段验证）；11条验收 grep 全部 PASS | Claude |
+| 2026-05-17 | Phase 3 Step 3-0-1 完成：04_api_spec.md §3 十二类业务单据完整 spec + §5.1 PO 三端点完整 spec + §6 附件独立端点补写（acceptance-reports 补入 design_engineer；6处422→400枚举错误码修正）；05_permissions.md §七新增 Phase 3 流程节点权限映射（28端点行 + FLOW_PERMISSIONS 代码块）；00_open_questions.md 登记 Q-010~013；CLAUDE.md §j 追加修订记录 | Claude |

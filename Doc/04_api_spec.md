@@ -846,20 +846,521 @@
 
 ---
 
-## 3. 流程节点 — 业务单据(扁平化资源,无 DELETE)
+## 3. 流程节点 — 业务单据（扁平化资源，无 DELETE）
 
-业务单据均为扁平化资源,通过 body 中的 `fixture_id` 关联治具。
+> 所有业务单据均为扁平化资源，通过 body 中的 `fixture_id` 关联治具。状态变更与单据 POST 解耦，业务层按顺序分别调用 `PATCH /api/fixtures/:id/status`（见 §2）。是否维持解耦见 Q-011。
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | `/api/iqc-reports` | IQC 检验报告(含合格/不合格、是否紧急上机授权) |
-| POST | `/api/acceptance-reports` | 试产验收报告(合格/不合格) |
-| POST | `/api/install-records` | ME 安装调试记录 |
-| POST | `/api/maintenance-records` | 保养记录(由保养触发后录入) |
-| POST | `/api/repair-records` | 维修记录(由报修单后录入,含费用) |
-| POST | `/api/scrap-records` | 报废记录 |
+---
 
-> **说明**:领用 / 归还 / 报修 / 保养触发等"状态变更"动作走 `PATCH /api/fixtures/:id/status`,这里的 `*-records` 是流程产出的**单据数据**(报告内容、附件、责任人),与状态变更解耦。
+### POST /api/drawings
+
+**说明**：设计工程师提交图纸/DFM 报告（multipart/form-data）
+**Auth**：`@require_role: super_admin, design_engineer`
+
+**请求体字段（multipart/form-data）**
+
+| 字段 | 类型 | 必填 | 约束 |
+|------|------|------|------|
+| `fixture_id` | int | 是 | 关联治具 ID |
+| `drawing_version` | string | 是 | 如 "A1"，与 fixture.current_version_code 一致 |
+| `drawing_type` | string | 是 | 枚举：`design_drawing` / `dfm_report` |
+| `file` | file | 是 | multipart，后端落盘 uploads/drawings/，存相对路径 |
+| `remark` | string | 否 | 备注 |
+
+**响应 201**
+```json
+{
+  "code": 201,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "fixture_id": 10,
+    "drawing_version": "A1",
+    "drawing_type": "design_drawing",
+    "file_path": "drawings/2026/05/xxx.pdf",
+    "uploaded_by": 3,
+    "created_at": "2026-05-17T09:00:00+08:00"
+  }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 400 | fixture_id / drawing_version / drawing_type / file 均为必填项 |
+| 400 | drawing_type 枚举值非法（允许值：design_drawing / dfm_report） |
+| 404 | 治具不存在 |
+
+---
+
+### POST /api/purchase-requisitions
+
+**说明**：设计工程师提交采购申请单
+**Auth**：`@require_role: super_admin, design_engineer, pm`
+
+**请求体字段**
+
+| 字段 | 类型 | 必填 | 约束 |
+|------|------|------|------|
+| `fixture_id` | int | 是 | 关联治具 ID |
+| `supplier_id` | int | 是 | 目标供应商 ID |
+| `estimated_amount` | decimal | 否 | 预估金额（元） |
+| `required_delivery_date` | string | 是 | ISO 8601 日期 |
+| `remark` | string | 否 | |
+
+**响应 201**
+```json
+{
+  "code": 201,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "fixture_id": 10,
+    "supplier_id": 2,
+    "estimated_amount": "1200.00",
+    "required_delivery_date": "2026-06-15",
+    "created_by": 3,
+    "created_at": "2026-05-17T09:00:00+08:00"
+  }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 400 | fixture_id / supplier_id / required_delivery_date 均为必填项 |
+| 404 | 治具不存在 / 供应商不存在 |
+
+---
+
+### POST /api/goods-receipts
+
+**说明**：仓库管理员到货签收
+**Auth**：`@require_role: super_admin, warehouse`
+
+**请求体字段**
+
+| 字段 | 类型 | 必填 | 约束 |
+|------|------|------|------|
+| `fixture_id` | int | 是 | 关联治具 ID |
+| `purchase_order_id` | int | 否 | 关联 PO ID |
+| `actual_arrival_date` | string | 是 | ISO 8601 日期时间 |
+| `received_by` | int | 是 | 签收人 user_id（一般为当前用户） |
+| `remark` | string | 否 | |
+
+**响应 201**
+```json
+{
+  "code": 201,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "fixture_id": 10,
+    "actual_arrival_date": "2026-05-17T14:00:00+08:00",
+    "received_by": 6,
+    "created_at": "2026-05-17T14:05:00+08:00"
+  }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 400 | fixture_id / actual_arrival_date / received_by 均为必填项 |
+| 404 | 治具不存在 |
+
+> 注：到货签收动作同步驱动 `PATCH /api/fixtures/:id/status`（trigger=`normal`，状态 → `pending_iqc`），二者解耦，业务层按顺序调用。
+
+---
+
+### POST /api/iqc-reports
+
+**说明**：IQC 检验员录入检验结果
+**Auth**：`@require_role: super_admin, iqc`
+
+**请求体字段（multipart/form-data）**
+
+| 字段 | 类型 | 必填 | 约束 |
+|------|------|------|------|
+| `fixture_id` | int | 是 | 关联治具 ID |
+| `result` | string | 是 | 枚举：`pass` / `fail` / `concession` |
+| `inspector_id` | int | 是 | 检验员 user_id |
+| `inspection_date` | string | 是 | ISO 8601 日期时间 |
+| `defect_description` | string | 否 | result=fail 时建议填写 |
+| `file` | file | 否 | multipart，检验报告附件 |
+| `remark` | string | 否 | |
+
+**响应 201**
+```json
+{
+  "code": 201,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "fixture_id": 10,
+    "result": "pass",
+    "inspector_id": 5,
+    "inspection_date": "2026-05-17T10:00:00+08:00",
+    "file_path": "iqc/2026/05/xxx.pdf",
+    "created_at": "2026-05-17T10:05:00+08:00"
+  }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 400 | fixture_id / result / inspector_id / inspection_date 均为必填项 |
+| 400 | result 枚举值非法（允许值：pass / fail / concession） |
+| 404 | 治具不存在 |
+
+---
+
+### POST /api/emergency-auth-records
+
+**说明**：紧急上机授权单（IQC 不合格但经 PM + IQC 双方授权上机）
+**Auth**：`@require_role: super_admin, pm, iqc`
+
+**请求体字段**
+
+| 字段 | 类型 | 必填 | 约束 |
+|------|------|------|------|
+| `fixture_id` | int | 是 | 关联治具 ID |
+| `iqc_report_id` | int | 是 | 关联 IQC 报告 ID |
+| `authorized_by_pm` | int | 是 | PM user_id |
+| `authorized_by_iqc` | int | 是 | IQC user_id |
+| `authorization_date` | string | 是 | ISO 8601 日期时间 |
+| `risk_description` | string | 是 | 风险说明，不得为空 |
+| `remark` | string | 否 | |
+
+**响应 201**
+```json
+{
+  "code": 201,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "fixture_id": 10,
+    "iqc_report_id": 3,
+    "authorized_by_pm": 1,
+    "authorized_by_iqc": 5,
+    "authorization_date": "2026-05-17T11:00:00+08:00",
+    "created_at": "2026-05-17T11:05:00+08:00"
+  }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 400 | 所有必填字段缺失 |
+| 400 | risk_description 不得为空 |
+| 404 | 治具 / IQC 报告不存在 |
+
+---
+
+### POST /api/install-records
+
+**说明**：ME 工程师录入安装调试记录
+**Auth**：`@require_role: super_admin, me`
+
+**请求体字段（multipart/form-data）**
+
+| 字段 | 类型 | 必填 | 约束 |
+|------|------|------|------|
+| `fixture_id` | int | 是 | 关联治具 ID |
+| `installer_id` | int | 是 | 安装者 user_id |
+| `install_date` | string | 是 | ISO 8601 日期时间 |
+| `equipment_code` | string | 否 | 对应设备代号（YN/DZ2X 等） |
+| `install_note` | string | 否 | 安装要点 |
+| `file` | file | 否 | multipart，安装记录附件 |
+
+**响应 201**
+```json
+{
+  "code": 201,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "fixture_id": 10,
+    "installer_id": 4,
+    "install_date": "2026-05-17T13:00:00+08:00",
+    "equipment_code": "YN",
+    "created_at": "2026-05-17T13:05:00+08:00"
+  }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 400 | fixture_id / installer_id / install_date 均为必填项 |
+| 404 | 治具不存在 |
+
+---
+
+### POST /api/acceptance-reports
+
+**说明**：IQC/ME/设计工程师录入试产验收结果
+**Auth**：`@require_role: super_admin, iqc, me, design_engineer`
+
+**请求体字段（multipart/form-data）**
+
+| 字段 | 类型 | 必填 | 约束 |
+|------|------|------|------|
+| `fixture_id` | int | 是 | 关联治具 ID |
+| `result` | string | 是 | 枚举：`pass` / `fail_rework` / `fail_scrap` |
+| `inspector_id` | int | 是 | 验收人 user_id |
+| `acceptance_date` | string | 是 | ISO 8601 日期时间 |
+| `defect_description` | string | 否 | result 非 pass 时建议填写 |
+| `file` | file | 否 | multipart，验收报告 |
+| `remark` | string | 否 | |
+
+**响应 201**
+```json
+{
+  "code": 201,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "fixture_id": 10,
+    "result": "pass",
+    "inspector_id": 5,
+    "acceptance_date": "2026-05-17T15:00:00+08:00",
+    "created_at": "2026-05-17T15:05:00+08:00"
+  }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 400 | fixture_id / result / inspector_id / acceptance_date 均为必填项 |
+| 400 | result 枚举值非法（允许值：pass / fail_rework / fail_scrap） |
+| 404 | 治具不存在 |
+
+---
+
+### POST /api/handover-records
+
+**说明**：仓库管理员移交确认（验收合格后治具移交入库）
+**Auth**：`@require_role: super_admin, warehouse`
+
+**请求体字段**
+
+| 字段 | 类型 | 必填 | 约束 |
+|------|------|------|------|
+| `fixture_id` | int | 是 | 关联治具 ID |
+| `handover_from` | int | 是 | 移交方 user_id（通常为 ME） |
+| `handover_to` | int | 是 | 接收方 user_id（通常为仓库） |
+| `handover_date` | string | 是 | ISO 8601 日期时间 |
+| `shelf_location` | string | 否 | 货架/库位编号（Q-013 待确认是否必填） |
+| `remark` | string | 否 | |
+
+**响应 201**
+```json
+{
+  "code": 201,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "fixture_id": 10,
+    "handover_from": 4,
+    "handover_to": 6,
+    "handover_date": "2026-05-17T16:00:00+08:00",
+    "shelf_location": "A-03-02",
+    "created_at": "2026-05-17T16:05:00+08:00"
+  }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 400 | fixture_id / handover_from / handover_to / handover_date 均为必填项 |
+| 404 | 治具不存在 |
+
+> ⚠️ 移交确认是否同步触发状态机流转，见 Q-010（待确认）。本 spec 暂定：移交确认仅作业务单据，状态流转（`acceptance_pass` trigger）由前端/业务层单独调用 `PATCH /api/fixtures/:id/status`。
+
+---
+
+### POST /api/checkout-records
+
+**说明**：生产班长发起领用 / 归还记录
+**Auth**：`@require_role: super_admin, production_lead`
+
+**请求体字段**
+
+| 字段 | 类型 | 必填 | 约束 |
+|------|------|------|------|
+| `fixture_id` | int | 是 | 关联治具 ID |
+| `action` | string | 是 | 枚举：`checkout` / `return` |
+| `operator_id` | int | 是 | 操作者 user_id |
+| `action_date` | string | 是 | ISO 8601 日期时间 |
+| `production_line` | string | 否 | 领用目标产线 |
+| `remark` | string | 否 | |
+
+**响应 201**
+```json
+{
+  "code": 201,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "fixture_id": 10,
+    "action": "checkout",
+    "operator_id": 7,
+    "action_date": "2026-05-17T08:00:00+08:00",
+    "created_at": "2026-05-17T08:01:00+08:00"
+  }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 400 | fixture_id / action / operator_id / action_date 均为必填项 |
+| 400 | action 枚举值非法（允许值：checkout / return） |
+| 404 | 治具不存在 |
+
+> 注：领用/归还动作同步驱动 `PATCH /api/fixtures/:id/status`（trigger=`checkout`/`return`），二者解耦，业务层按顺序调用。
+
+---
+
+### POST /api/maintenance-records
+
+**说明**：ME 工程师录入保养执行记录
+**Auth**：`@require_role: super_admin, me`
+
+**请求体字段（multipart/form-data）**
+
+| 字段 | 类型 | 必填 | 约束 |
+|------|------|------|------|
+| `fixture_id` | int | 是 | 关联治具 ID |
+| `maintainer_id` | int | 是 | 保养执行者 user_id |
+| `maintenance_date` | string | 是 | ISO 8601 日期时间 |
+| `maintenance_type` | string | 是 | 枚举：`routine` / `corrective` |
+| `maintenance_note` | string | 否 | 保养内容描述 |
+| `next_maintenance_date` | string | 否 | 下次保养计划日期 |
+| `file` | file | 否 | multipart，保养记录附件 |
+
+**响应 201**
+```json
+{
+  "code": 201,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "fixture_id": 10,
+    "maintainer_id": 4,
+    "maintenance_date": "2026-05-17T09:00:00+08:00",
+    "maintenance_type": "routine",
+    "created_at": "2026-05-17T09:05:00+08:00"
+  }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 400 | fixture_id / maintainer_id / maintenance_date / maintenance_type 均为必填项 |
+| 400 | maintenance_type 枚举值非法（允许值：routine / corrective） |
+| 404 | 治具不存在 |
+
+---
+
+### POST /api/repair-records
+
+**说明**：ME 工程师录入维修记录（含费用）
+**Auth**：`@require_role: super_admin, me`
+
+**请求体字段（multipart/form-data）**
+
+| 字段 | 类型 | 必填 | 约束 |
+|------|------|------|------|
+| `fixture_id` | int | 是 | 关联治具 ID |
+| `repairer_id` | int | 是 | 维修执行者 user_id |
+| `repair_date` | string | 是 | ISO 8601 日期时间 |
+| `repair_cause` | string | 是 | 维修原因描述 |
+| `repair_cost` | decimal | 否 | 维修费用（元），权限见成本模块 |
+| `file` | file | 否 | multipart，维修记录附件 |
+| `remark` | string | 否 | |
+
+**响应 201**
+```json
+{
+  "code": 201,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "fixture_id": 10,
+    "repairer_id": 4,
+    "repair_date": "2026-05-17T10:00:00+08:00",
+    "repair_cause": "模具导柱磨损",
+    "repair_cost": "350.00",
+    "created_at": "2026-05-17T10:05:00+08:00"
+  }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 400 | fixture_id / repairer_id / repair_date / repair_cause 均为必填项 |
+| 404 | 治具不存在 |
+
+---
+
+### POST /api/scrap-records
+
+**说明**：PM 发起报废申请
+**Auth**：`@require_role: super_admin, pm`
+
+**请求体字段（multipart/form-data）**
+
+| 字段 | 类型 | 必填 | 约束 |
+|------|------|------|------|
+| `fixture_id` | int | 是 | 关联治具 ID |
+| `applicant_id` | int | 是 | 申请人 user_id |
+| `scrap_reason` | string | 是 | 报废原因，不得为空 |
+| `scrap_date` | string | 是 | ISO 8601 日期 |
+| `estimated_salvage_value` | decimal | 否 | 残值估计（元） |
+| `file` | file | 否 | multipart，报废申请附件 |
+
+**响应 201**
+```json
+{
+  "code": 201,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "fixture_id": 10,
+    "applicant_id": 1,
+    "scrap_reason": "模具寿命到期无法修复",
+    "scrap_date": "2026-05-17",
+    "created_at": "2026-05-17T11:00:00+08:00"
+  }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 400 | fixture_id / applicant_id / scrap_reason / scrap_date 均为必填项 |
+| 400 | scrap_reason 不得为空 |
+| 404 | 治具不存在 |
 
 ---
 
@@ -884,13 +1385,143 @@
 
 ## 5. 仓储与采购
 
-### 5.1 采购订单(无 DELETE,一对多结构:PO 头 + items)
+### 5.1 采购订单（无 DELETE，一对多结构：PO 头 + items）
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | `/api/purchase-orders` | 新建 PO(含合同号、供应商、总交期) |
-| POST | `/api/purchase-orders/:id/items` | 添加 PO 明细项(关联具体 fixture) |
-| GET | `/api/purchase-orders/:id` | PO 详情(含明细项) |
+---
+
+#### POST /api/purchase-orders
+
+**说明**：采购专员新建 PO 头
+**Auth**：`@require_role: super_admin, purchaser`
+
+**请求体字段**
+
+| 字段 | 类型 | 必填 | 约束 |
+|------|------|------|------|
+| `fixture_id` | int | 是 | 关联治具 ID（Phase 3：一 PO 一治具） |
+| `supplier_id` | int | 是 | 供应商 ID |
+| `contract_no` | string | 否 | 合同号 |
+| `order_date` | string | 是 | 下单日期 ISO 8601 |
+| `planned_delivery_date` | string | 是 | 约定交期 ISO 8601 |
+| `total_amount` | decimal | 否 | 合同总金额（元），留空待 items 汇总 |
+| `remark` | string | 否 | |
+
+**响应 201**
+```json
+{
+  "code": 201,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "fixture_id": 10,
+    "supplier_id": 2,
+    "contract_no": "PO-2026-001",
+    "order_date": "2026-05-17",
+    "planned_delivery_date": "2026-06-30",
+    "status": "open",
+    "created_by": 8,
+    "version": 0,
+    "created_at": "2026-05-17T09:00:00+08:00"
+  }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 400 | fixture_id / supplier_id / order_date / planned_delivery_date 均为必填项 |
+| 404 | 治具不存在 / 供应商不存在 |
+
+> ⚠️ 计划日期推算归属见 Q-012（待确认）。Phase 3 暂只存采购下单日，不自动推算后续节点计划日期。
+
+---
+
+#### POST /api/purchase-orders/:id/items
+
+**说明**：在 PO 下新增明细项
+**Auth**：`@require_role: super_admin, purchaser`
+
+**请求体字段**
+
+| 字段 | 类型 | 必填 | 约束 |
+|------|------|------|------|
+| `item_name` | string | 是 | 明细项描述 |
+| `quantity` | int | 是 | 数量，≥ 1 |
+| `unit_price` | decimal | 是 | 单价（元） |
+| `unit` | string | 否 | 单位，默认"套" |
+| `remark` | string | 否 | |
+
+**响应 201**
+```json
+{
+  "code": 201,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "purchase_order_id": 1,
+    "item_name": "SUS VC 压合治具主体",
+    "quantity": 1,
+    "unit_price": "8500.00",
+    "unit": "套",
+    "line_total": "8500.00",
+    "created_at": "2026-05-17T09:10:00+08:00"
+  }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 400 | item_name / quantity / unit_price 均为必填项 |
+| 400 | quantity 必须 ≥ 1 |
+| 404 | 采购订单不存在 |
+
+---
+
+#### GET /api/purchase-orders/:id
+
+**说明**：PO 详情（含明细项列表）
+**Auth**：任意已登录用户（宽视图原则）
+
+**响应 200**
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "fixture_id": 10,
+    "supplier_id": 2,
+    "supplier_name": "KFS",
+    "contract_no": "PO-2026-001",
+    "order_date": "2026-05-17",
+    "planned_delivery_date": "2026-06-30",
+    "status": "open",
+    "total_amount": "8500.00",
+    "created_by": 8,
+    "version": 0,
+    "items": [
+      {
+        "id": 1,
+        "item_name": "SUS VC 压合治具主体",
+        "quantity": 1,
+        "unit_price": "8500.00",
+        "unit": "套",
+        "line_total": "8500.00"
+      }
+    ],
+    "created_at": "2026-05-17T09:00:00+08:00"
+  }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 404 | 采购订单不存在 |
 
 ### 5.2 仓储
 
@@ -900,7 +1531,53 @@
 
 ## 6. 附件与统计
 
-> V1.3 未定义独立的附件上传端点(`/api/uploads`)。文件上传按业务单据接入(IQC、验收、安装、维保、维修等接口接受 multipart/form-data 含附件字段),具体实现见 [docs/03_architecture_v1.4.md](./03_architecture_v1.4.md) 第 3.5 节。
+> V1.4 Phase 3 新增独立附件上传端点 `POST /api/attachments`，用于业务单据提交后的补充附件上传（如审批中的补充材料、IQC 补充报告等）。各业务单据接口本身支持 multipart/form-data 随正文上传附件；此独立端点为补充上传场景提供支持。详见 `Doc/03_architecture_v1.4.md` 第 3.5 节。
+
+---
+
+### POST /api/attachments
+
+**说明**：补充上传附件（关联已存在的业务单据）
+**Auth**：任意已登录用户（上传后与 related_table/related_id 关联，具体操作权限由业务层保障）
+**Content-Type**：multipart/form-data
+
+**请求体字段**
+
+| 字段 | 类型 | 必填 | 约束 |
+|------|------|------|------|
+| `file` | file | 是 | 文件实体 |
+| `related_table` | string | 是 | 关联业务表名，如 `iqc_reports` / `acceptance_reports` / `repair_records` 等 |
+| `related_id` | int | 是 | 关联记录 ID |
+| `attachment_type` | string | 否 | 枚举：`report` / `photo` / `certificate` / `other`，默认 `other` |
+| `remark` | string | 否 | |
+
+**响应 201**
+```json
+{
+  "code": 201,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "file_path": "attachments/2026/05/xxx.pdf",
+    "original_filename": "IQC补充报告.pdf",
+    "file_size_kb": 128,
+    "related_table": "iqc_reports",
+    "related_id": 3,
+    "uploaded_by": 5,
+    "created_at": "2026-05-17T10:30:00+08:00"
+  }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 400 | file / related_table / related_id 均为必填项 |
+| 400 | attachment_type 枚举值非法（允许值：report / photo / certificate / other） |
+| 413 | 文件大小超出限制（业务层建议单文件 ≤ 50MB） |
+
+---
 
 ### 6.1 甘特图
 

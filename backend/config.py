@@ -16,6 +16,7 @@ class BaseConfig:
         'pool_size': 10,
         'max_overflow': 20,
     }
+    UPLOAD_BASE = os.environ.get('UPLOAD_BASE', 'uploads')
 
 
 class DevelopmentConfig(BaseConfig):

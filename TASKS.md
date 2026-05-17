@@ -208,16 +208,75 @@
 
 ## Phase 3 — 流程节点模块
 
-- [ ] 设计阶段：图纸/DFM 上传、采购申请单
-- [ ] 采购阶段：PO 头 + items 一对多
-- [ ] IQC 标准路径与紧急上机路径
-- [ ] 安装调试记录
-- [ ] 试产验收（合格/不合格分支）
-- [ ] 移交确认
-- [ ] 生产领用与归还
-- [ ] 保养触发与记录
-- [ ] 报修与维修
-- [ ] 报废申请
+> 详细任务参数见 [TASKS_Phase3_detail.md](./TASKS_Phase3_detail.md)（共 12 子模块、28 个 Step）。
+> **建议执行顺序**：3-0-1 → 3-0-2 → 3-1-1 → 3-1-2 → 3-2-1 → 3-2-2 → 3-3-1 → 3-3-2 → 3-11-1 → 3-4-1 → 3-4-2 → 3-5-1 → 3-5-2 → 3-6-1 → 3-6-2 → 3-11-2 → 3-7-1 → 3-7-2 → 3-8-1 → 3-8-2 → 3-9-1 → 3-9-2 → 3-10-1 → 3-10-2 → 3-11-3 → 3-12-1 → 3-12-2 → 3-12-3
+
+### 3.0 准备
+
+- [x] **3-0-1** API spec §3/§5/§6 补全 + 流程节点权限矩阵补全 + Q-010~013 登记 — 2026-05-17
+- [x] **3-0-2** 文件上传基础设施（`utils/upload.py` + `blueprints/files.py` + `UPLOAD_BASE` env + Q-010~013 关闭）— 2026-05-17
+
+### 3.1 设计阶段：图纸/DFM 上传、采购申请单
+
+- [ ] **3-1-1** Drawing + PurchaseRequisition Models + Migration（T01）
+- [ ] **3-1-2** drawing_service + purchase_requisition_service + Blueprint（T02，含 version_bump 联动回填）
+
+### 3.2 采购阶段：PO 头 + items 一对多
+
+- [ ] **3-2-1** PurchaseOrder + PurchaseOrderItem Models + Migration（T01）
+- [ ] **3-2-2** purchase_order_service + Blueprint（T02）
+
+### 3.3 回厂与 IQC：标准路径 + 紧急上机路径
+
+- [ ] **3-3-1** GoodsReceipt + IqcReport + EmergencyAuthRecord Models + Migration（T01）
+- [ ] **3-3-2** receipt_service + iqc_service + emergency_auth_service + Blueprint（T02）
+
+### 3.4 安装调试记录
+
+- [ ] **3-4-1** InstallRecord Model + Migration（T01）
+- [ ] **3-4-2** install_service + Blueprint（T02）
+
+### 3.5 试产验收：合格 / 不合格分支
+
+- [ ] **3-5-1** AcceptanceReport Model + Migration（T01）
+- [ ] **3-5-2** acceptance_service + Blueprint（T02）
+
+### 3.6 移交接收
+
+- [ ] **3-6-1** HandoverRecord Model + Migration（T01）
+- [ ] **3-6-2** handover_service + Blueprint（T02）
+
+### 3.7 生产领用与归还
+
+- [ ] **3-7-1** CheckoutRecord Model + fixtures.usage_count 字段补充 + Migration（T01）
+- [ ] **3-7-2** checkout_service + Blueprint（T02）
+
+### 3.8 保养触发与记录
+
+- [ ] **3-8-1** MaintenanceRecord Model + fixtures 保养阈值字段补充 + Migration（T01）
+- [ ] **3-8-2** maintenance_service + Blueprint（T02）
+
+### 3.9 报修与维修
+
+- [ ] **3-9-1** RepairRecord Model + Migration（T01）
+- [ ] **3-9-2** repair_service + Blueprint（T02）
+
+### 3.10 报废申请
+
+- [ ] **3-10-1** ScrapRecord Model + Migration（T01）
+- [ ] **3-10-2** scrap_service + Blueprint（T02）
+
+### 3.11 单元测试
+
+- [ ] **3-11-1** test 设计 / 采购 / IQC 阶段 services（T07）
+- [ ] **3-11-2** test 安装 / 验收 / 移交 阶段 services（T07）
+- [ ] **3-11-3** test 领用归还 / 维保 / 维修 / 报废 阶段 services（T07）
+
+### 3.12 前端流程节点
+
+- [ ] **3-12-1** FixtureDetail 治具详情 / 全生命周期时间线页（T04 变体）
+- [ ] **3-12-2** 设计 / 采购 / IQC 阶段操作表单与对话框（T04）
+- [ ] **3-12-3** 安装 / 验收 / 移交 / 领用归还 / 维保 / 维修 / 报废 操作表单与对话框（T04）
 
 ---
 
@@ -322,3 +381,4 @@
 | 2026-05-16 | Phase 2 Step 2-5-2 完成：FixtureForm.vue detail 模式追加"加开-复制"按钮（hasPermission('fixture.copy_to_batch') 控制）+ el-dialog 目标批次选择（el-radio-group + nanoid key + 空状态文案 + copyBatchLoading/copySubmitting 双加载态）；api/fixture.js 追加 copyFixtureToBatch（/fixtures/${id}/copy-to-batch）；安装 @element-plus/icons-vue 依赖（Loading icon）；pnpm build 通过（0 errors）；9条验收 grep 全部 PASS |
 | 2026-05-16 | Phase 2 Step 2-5-1 完成：fixture_service.copy_to_batch()（parent_fixture_id 溯源 + current_version_code 继承 + generate_fixture_code 传入继承版本递增套号 + 跨项目/cancelled 校验 + IntegrityError 兜底）+ fixtures Blueprint /copy-to-batch 501 占位替换为实现（@require_role('super_admin','pm','design_engineer')）；修正 prompt 4 处（generate_fixture_code 签名参数 project_code 非 project_id + 返回 str 非元组 + Batch.is_sealed 不存在 + _fixture_to_dict→_serialize_item）；烟测 6 用例全部通过（正常复制 201 SMOKE-FB-YN#2-A2 / 缺参数 400 / 跨项目 400 / IQC 403 / 源不存在 404 / DB 层 6 字段验证）；11条验收 grep 全部 PASS | Claude |
 | 2026-05-17 | Phase 3 Step 3-0-1 完成：04_api_spec.md §3 十二类业务单据完整 spec + §5.1 PO 三端点完整 spec + §6 附件独立端点补写（acceptance-reports 补入 design_engineer；6处422→400枚举错误码修正）；05_permissions.md §七新增 Phase 3 流程节点权限映射（28端点行 + FLOW_PERMISSIONS 代码块）；00_open_questions.md 登记 Q-010~013；CLAUDE.md §j 追加修订记录 | Claude |
+| 2026-05-17 | Phase 3 Step 3-0-2 完成：`utils/upload.py`（`save_upload` + `_get_upload_base`，扩展名白名单 + 50MB 限制 + 相对路径正斜杠 §e.2）+ `blueprints/files.py`（`GET /api/files/<path>` jwt 鉴权下载 + 路径穿越防护）注册至 `/api/files`；`UPLOAD_BASE` env var 写入 `.env.development`/`.env.example`/`config.py`；`uploads/.gitkeep` + `.gitignore` 改为 `uploads/*` + `!.gitkeep`；Q-010~013 全部关闭（A/A/A/B）；TASKS.md Phase 3 展开为 28 步结构 | Claude |

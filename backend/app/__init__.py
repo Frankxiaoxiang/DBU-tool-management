@@ -67,6 +67,9 @@ def create_app(config_name=None):
     from app.blueprints.fixtures import fixtures_bp
     app.register_blueprint(fixtures_bp, url_prefix='/api/fixtures')
 
+    from app.blueprints.files import files_bp
+    app.register_blueprint(files_bp, url_prefix='/api/files')
+
     # ⑥ 全局 errorhandler
     _register_error_handlers(app)
 

@@ -79,6 +79,11 @@ def create_app(config_name=None):
     from app.blueprints.purchase_orders import purchase_orders_bp
     app.register_blueprint(purchase_orders_bp, url_prefix='/api/purchase-orders')
 
+    from app.blueprints.iqc import goods_receipts_bp, iqc_reports_bp, emergency_auth_bp
+    app.register_blueprint(goods_receipts_bp, url_prefix='/api/goods-receipts')
+    app.register_blueprint(iqc_reports_bp, url_prefix='/api/iqc-reports')
+    app.register_blueprint(emergency_auth_bp, url_prefix='/api/emergency-auth-records')
+
     # ⑥ 全局 errorhandler
     _register_error_handlers(app)
 
@@ -118,6 +123,10 @@ def _register_error_handlers(app):
     @app.errorhandler(NotFoundError)
     def handle_not_found(err):
         return error_response(err.message, 404)
+
+    @app.errorhandler(NotImplementedError)
+    def handle_not_implemented(err):
+        return error_response(str(err) or '该功能尚未实现，将在 Phase 4 审批模块上线', 501)
 
     # JWT 错误回调（统一返回 JSON，避免 HTML 默认响应）
     @jwt.invalid_token_loader

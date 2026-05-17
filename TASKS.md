@@ -229,7 +229,7 @@
 ### 3.3 回厂与 IQC：标准路径 + 紧急上机路径
 
 - [x] **3-3-1** GoodsReceipt + IqcReport + EmergencyAuthRecord Models + Migration（T01）— 2026-05-17
-- [ ] **3-3-2** receipt_service + iqc_service + emergency_auth_service + Blueprint（T02）
+- [x] **3-3-2** goods_receipt_service + iqc_service + emergency_auth_service + Blueprint（T02）— 2026-05-17
 
 ### 3.4 安装调试记录
 
@@ -268,7 +268,7 @@
 
 ### 3.11 单元测试
 
-- [ ] **3-11-1** test 设计 / 采购 / IQC 阶段 services（T07）
+- [x] **3-11-1** test 设计 / 采购 / IQC 阶段 services（T07）— 2026-05-17
 - [ ] **3-11-2** test 安装 / 验收 / 移交 阶段 services（T07）
 - [ ] **3-11-3** test 领用归还 / 维保 / 维修 / 报废 阶段 services（T07）
 
@@ -385,3 +385,5 @@
 | 2026-05-17 | Phase 3 Step 3-1-1 完成：Drawing（13 字段，drawing_type 枚举方案A，自引用 FK fk_drawings_source use_alter=True，idx_fixture + idx_version + idx_type）+ PurchaseRequisition（12 字段，requisition_no UNIQUE，confirm_status='pending'，无 supplier_id，idx_fixture）两表 Migration 924cd214eb0d + 补丁 74c24e756ba1（自引用 FK 单独 ALTER）upgrade 通过；SHOW CREATE TABLE 确认 utf8mb4 + fk_drawings_source ✅；两表均无 version/current_status/updated_at（business_record 铁律）；04_api_spec.md §3 drawings/purchase-requisitions 完整更新（含 GET + PATCH confirm 端点） | Claude |
 | 2026-05-17 | Phase 3 Step 3-2-2 完成：purchase_order_service（create/add_item/get/list/update/cancel 六函数，po_no PO-YYYYMMDD-XXXX 编号，乐观锁手动校验，cancel 含 cancel_reason/cancelled_at/by 写入）+ Blueprint（6 端点，POST/GET 根路由尾部斜杠，禁 DELETE）；注册 url_prefix=/api/purchase-orders；冒烟 A~H 全通过；已知 Model-Spec Gap 已记录（fixture_id 在 items 层/items 缺 item_name 等字段） | Claude |
 | 2026-05-17 | Phase 3 Step 3-3-1 完成：GoodsReceipt（7字段，actual_arrival_date=DATE，received_qty保留，purchase_order_id可选FK，idx_fixture）+ IqcReport（9字段，result枚举pass/fail/concession，inspector_id，inspection_date，file_path，idx_fixture+idx_result）+ EmergencyAuthRecord（9字段，iqc_report_id FK，authorized_by_pm/iqc，authorization_date NOT NULL，risk_description TEXT NOT NULL，idx_fixture）三表 Migration bf7cdd51266e upgrade 通过；SHOW CREATE TABLE 确认 utf8mb4 + FK 正确；字段偏差来自 TASKS 推导版与 API spec 差异，以 API spec 为准（Frank 确认 actual_arrival_date=DATE + received_qty保留） | Claude |
+| 2026-05-17 | Phase 3 Step 3-3-2 完成：goods_receipt_service（JSON body 无文件，received_by=JWT identity）+ iqc_service（multipart，file_path 字段，remark，无 inspection_items/conclusion_note，fail/concession TODO Phase 4 钩子）+ emergency_auth_service（JSON body，双签必填，risk_description 非空）+ blueprints/iqc.py（三 Blueprint 对象聚合，各 2 端点共 6 端点，全加尾部斜杠）；NotImplementedError→501 error handler 追加至 _register_error_handlers；Blueprint 注册三路径；修正三处设计偏差（GoodsReceipt 无照片字段→JSON、IqcReport file_path 非 report_photo_path、去除 inspection_items/conclusion_note）；冒烟 A~J 全通过 | Claude |
+| 2026-05-17 | Phase 3 Step 3-11-1 完成：新建 test_drawing_service.py（16 用例）+ test_purchase_order_service.py（19 用例）+ test_iqc_service.py（27 用例）共 62 新用例全 PASS；总计 151 用例（89 旧 + 62 新）；conftest.py 扩展 purchaser 用户/角色 + seeded_supplier/drawing/po/iqc_report 四个 fixture；blueprints/iqc.py 追加两条 Phase 4 占位 501 端点；修正两处实战陷阱（BytesIO vs raw bytes 文件上传 + savepoint 释放后 ORM 过期需预捕获 version）；覆盖率：drawing_service 91% / purchase_order_service 75% / goods_receipt_service 66% / iqc_service 66% / emergency_auth_service 69%，总体 75% | Claude |

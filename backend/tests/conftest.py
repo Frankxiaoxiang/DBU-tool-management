@@ -17,6 +17,9 @@ from app.models.batch import Batch  # noqa: E402
 from app.models.fixture_template import FixtureTemplate  # noqa: E402
 from app.models.fixture_template_snapshot import FixtureTemplateSnapshot  # noqa: E402
 from app.models.fixture import Fixture  # noqa: E402
+from app.models.supplier import Supplier  # noqa: E402
+from app.models.drawing import Drawing  # noqa: E402
+from app.models.iqc_report import IqcReport  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -283,8 +286,27 @@ def seeded_design_engineer_user(db_session):
 
 
 @pytest.fixture
+def seeded_purchaser_user(db_session):
+    role = Role(code='purchaser', name='采购员')
+    db_session.add(role)
+    db_session.flush()
+    user = User(
+        username='purchaser_test',
+        password_hash=generate_password_hash('Test1234!'),
+        full_name='测试采购员',
+        email='purchaser@test.com',
+        is_active=True,
+    )
+    user.roles.append(role)
+    db_session.add(user)
+    db_session.flush()
+    return user
+
+
+@pytest.fixture
 def auth_headers(seeded_pm_user, seeded_iqc_user, seeded_super_admin_user,
-                 seeded_warehouse_user, seeded_design_engineer_user):
+                 seeded_warehouse_user, seeded_design_engineer_user,
+                 seeded_purchaser_user):
     """各角色 JWT headers；additional_claims 必须含 role_codes，与 require_role 装饰器对齐。"""
     return {
         'pm': {
@@ -315,6 +337,12 @@ def auth_headers(seeded_pm_user, seeded_iqc_user, seeded_super_admin_user,
             'Authorization': 'Bearer ' + create_access_token(
                 identity=str(seeded_design_engineer_user.id),
                 additional_claims={'role_codes': ['design_engineer']},
+            ),
+        },
+        'purchaser': {
+            'Authorization': 'Bearer ' + create_access_token(
+                identity=str(seeded_purchaser_user.id),
+                additional_claims={'role_codes': ['purchaser']},
             ),
         },
     }
@@ -430,3 +458,69 @@ def seeded_cross_project_batch(db_session, seeded_pm_user):
     db_session.add(batch)
     db_session.flush()
     return batch
+
+
+# ---------------------------------------------------------------------------
+# Phase 3 Step 3-11-1 — 设计 / 采购 / IQC 阶段测试种子数据
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def seeded_supplier(db_session):
+    """测试用供应商，供 PO 创建测试使用。"""
+    supplier = Supplier(
+        code='TEST-SUP',
+        name='测试供应商',
+        main_category='模具',
+        is_active=True,
+    )
+    db_session.add(supplier)
+    db_session.flush()
+    return supplier
+
+
+@pytest.fixture
+def seeded_drawing(db_session, seeded_fixture, seeded_design_engineer_user):
+    """直接构造 Drawing 记录（绕过 service / save_upload），供确认和复制测试使用。"""
+    drawing = Drawing(
+        fixture_id=seeded_fixture.id,
+        version_code='A1',
+        drawing_type='design_drawing',
+        file_path='drawings/seed/test.pdf',
+        uploaded_by=seeded_design_engineer_user.id,
+    )
+    db_session.add(drawing)
+    db_session.flush()
+    return drawing
+
+
+@pytest.fixture
+def seeded_iqc_report(db_session, seeded_fixture, seeded_iqc_user):
+    """直接构造 IqcReport 记录（result=fail），供紧急上机授权测试使用。"""
+    from datetime import datetime
+    report = IqcReport(
+        fixture_id=seeded_fixture.id,
+        result='fail',
+        inspection_date=datetime(2026, 5, 17, 10, 0, 0),
+        inspector_id=seeded_iqc_user.id,
+    )
+    db_session.add(report)
+    db_session.flush()
+    return report
+
+
+@pytest.fixture
+def seeded_po(db_session, seeded_supplier, seeded_purchaser_user):
+    """直接构造 PurchaseOrder 头（status=open, version=0），供 update/cancel 测试使用。"""
+    from app.models.purchase_order import PurchaseOrder
+    from datetime import date
+    po = PurchaseOrder(
+        po_no='PO-20260517-TEST',
+        supplier_id=seeded_supplier.id,
+        order_date=date(2026, 5, 17),
+        status='open',
+        created_by=seeded_purchaser_user.id,
+        version=0,
+    )
+    db_session.add(po)
+    db_session.flush()
+    return po

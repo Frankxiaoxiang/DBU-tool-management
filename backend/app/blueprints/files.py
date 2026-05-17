@@ -1,7 +1,7 @@
 from flask import Blueprint, send_from_directory, abort
 from flask_jwt_extended import jwt_required
 
-from utils.upload import _get_upload_base
+from app.utils.upload import _get_upload_base
 
 files_bp = Blueprint('files', __name__)
 

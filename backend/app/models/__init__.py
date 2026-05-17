@@ -9,5 +9,7 @@ from .batch import Batch
 from .fixture import Fixture
 from .fixture_status_history import FixtureStatusHistory
 from .audit_log import AuditLog
+from .drawing import Drawing
+from .purchase_requisition import PurchaseRequisition
 
-__all__ = ['User', 'Role', 'SystemDict', 'Supplier', 'FixtureTemplate', 'Project', 'FixtureTemplateSnapshot', 'Batch', 'Fixture', 'FixtureStatusHistory', 'AuditLog']
+__all__ = ['User', 'Role', 'SystemDict', 'Supplier', 'FixtureTemplate', 'Project', 'FixtureTemplateSnapshot', 'Batch', 'Fixture', 'FixtureStatusHistory', 'AuditLog', 'Drawing', 'PurchaseRequisition']

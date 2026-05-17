@@ -218,7 +218,7 @@
 
 ### 3.1 设计阶段：图纸/DFM 上传、采购申请单
 
-- [ ] **3-1-1** Drawing + PurchaseRequisition Models + Migration（T01）
+- [x] **3-1-1** Drawing + PurchaseRequisition Models + Migration（T01）— 2026-05-17
 - [ ] **3-1-2** drawing_service + purchase_requisition_service + Blueprint（T02，含 version_bump 联动回填）
 
 ### 3.2 采购阶段：PO 头 + items 一对多
@@ -381,4 +381,5 @@
 | 2026-05-16 | Phase 2 Step 2-5-2 完成：FixtureForm.vue detail 模式追加"加开-复制"按钮（hasPermission('fixture.copy_to_batch') 控制）+ el-dialog 目标批次选择（el-radio-group + nanoid key + 空状态文案 + copyBatchLoading/copySubmitting 双加载态）；api/fixture.js 追加 copyFixtureToBatch（/fixtures/${id}/copy-to-batch）；安装 @element-plus/icons-vue 依赖（Loading icon）；pnpm build 通过（0 errors）；9条验收 grep 全部 PASS |
 | 2026-05-16 | Phase 2 Step 2-5-1 完成：fixture_service.copy_to_batch()（parent_fixture_id 溯源 + current_version_code 继承 + generate_fixture_code 传入继承版本递增套号 + 跨项目/cancelled 校验 + IntegrityError 兜底）+ fixtures Blueprint /copy-to-batch 501 占位替换为实现（@require_role('super_admin','pm','design_engineer')）；修正 prompt 4 处（generate_fixture_code 签名参数 project_code 非 project_id + 返回 str 非元组 + Batch.is_sealed 不存在 + _fixture_to_dict→_serialize_item）；烟测 6 用例全部通过（正常复制 201 SMOKE-FB-YN#2-A2 / 缺参数 400 / 跨项目 400 / IQC 403 / 源不存在 404 / DB 层 6 字段验证）；11条验收 grep 全部 PASS | Claude |
 | 2026-05-17 | Phase 3 Step 3-0-1 完成：04_api_spec.md §3 十二类业务单据完整 spec + §5.1 PO 三端点完整 spec + §6 附件独立端点补写（acceptance-reports 补入 design_engineer；6处422→400枚举错误码修正）；05_permissions.md §七新增 Phase 3 流程节点权限映射（28端点行 + FLOW_PERMISSIONS 代码块）；00_open_questions.md 登记 Q-010~013；CLAUDE.md §j 追加修订记录 | Claude |
-| 2026-05-17 | Phase 3 Step 3-0-2 完成：`utils/upload.py`（`save_upload` + `_get_upload_base`，扩展名白名单 + 50MB 限制 + 相对路径正斜杠 §e.2）+ `blueprints/files.py`（`GET /api/files/<path>` jwt 鉴权下载 + 路径穿越防护）注册至 `/api/files`；`UPLOAD_BASE` env var 写入 `.env.development`/`.env.example`/`config.py`；`uploads/.gitkeep` + `.gitignore` 改为 `uploads/*` + `!.gitkeep`；Q-010~013 全部关闭（A/A/A/B）；TASKS.md Phase 3 展开为 28 步结构 | Claude |
+| 2026-05-17 | Phase 3 Step 3-0-2 完成：`utils/upload.py`（`save_upload` + `_get_upload_base`，扩展名白名单 + 50MB 限制 + 相对路径正斜杠 §e.2）+ `blueprints/files.py`（`GET /api/files/<path>` jwt 鉴权下载 + 路径穿越防护）注册至 `/api/files`；`UPLOAD_BASE` env var 写入 `.env.development`/`.env.example`/`config.py`；`uploads/.gitkeep` + `.gitignore` 改为 `uploads/*` + `!.gitkeep`；Q-010~013 全部关闭（A/A/A/B）；TASKS.md Phase 3 展开为 28 步结构；修正 `files.py` + `upload.py` 的 import 路径（`from app.utils.*` / `from app.exceptions.*`，与现有 Blueprint 模式一致） | Claude |
+| 2026-05-17 | Phase 3 Step 3-1-1 完成：Drawing（13 字段，drawing_type 枚举方案A，自引用 FK fk_drawings_source use_alter=True，idx_fixture + idx_version + idx_type）+ PurchaseRequisition（12 字段，requisition_no UNIQUE，confirm_status='pending'，无 supplier_id，idx_fixture）两表 Migration 924cd214eb0d + 补丁 74c24e756ba1（自引用 FK 单独 ALTER）upgrade 通过；SHOW CREATE TABLE 确认 utf8mb4 + fk_drawings_source ✅；两表均无 version/current_status/updated_at（business_record 铁律）；04_api_spec.md §3 drawings/purchase-requisitions 完整更新（含 GET + PATCH confirm 端点） | Claude |

@@ -854,7 +854,7 @@
 
 ### POST /api/drawings
 
-**说明**：设计工程师提交图纸/DFM 报告（multipart/form-data）
+**说明**：设计工程师提交图纸或 DFM 报告（multipart/form-data）。每次上传建一条记录，`drawing_type` 区分类型。
 **Auth**：`@require_role: super_admin, design_engineer`
 
 **请求体字段（multipart/form-data）**
@@ -862,10 +862,13 @@
 | 字段 | 类型 | 必填 | 约束 |
 |------|------|------|------|
 | `fixture_id` | int | 是 | 关联治具 ID |
-| `drawing_version` | string | 是 | 如 "A1"，与 fixture.current_version_code 一致 |
+| `version_code` | string | 是 | 图纸版本号，如 "A1"，与 fixture.current_version_code 一致 |
 | `drawing_type` | string | 是 | 枚举：`design_drawing` / `dfm_report` |
 | `file` | file | 是 | multipart，后端落盘 uploads/drawings/，存相对路径 |
-| `remark` | string | 否 | 备注 |
+| `acceptance_standard` | string | 否 | 关键尺寸 / 验收标准（主要用于 design_drawing） |
+| `bom_info` | string | 否 | BOM 信息（主要用于 design_drawing） |
+| `is_copied` | boolean | 否 | 是否复制既有图纸（默认 false） |
+| `source_drawing_id` | int | 否 | 复制来源图纸 ID（is_copied=true 时填写） |
 
 **响应 201**
 ```json
@@ -875,10 +878,16 @@
   "data": {
     "id": 1,
     "fixture_id": 10,
-    "drawing_version": "A1",
+    "version_code": "A1",
     "drawing_type": "design_drawing",
     "file_path": "drawings/2026/05/xxx.pdf",
+    "acceptance_standard": null,
+    "bom_info": null,
+    "is_copied": false,
+    "source_drawing_id": null,
     "uploaded_by": 3,
+    "confirmed_by": null,
+    "confirmed_at": null,
     "created_at": "2026-05-17T09:00:00+08:00"
   }
 }
@@ -888,15 +897,78 @@
 
 | HTTP | message |
 |------|---------|
-| 400 | fixture_id / drawing_version / drawing_type / file 均为必填项 |
+| 400 | fixture_id / version_code / drawing_type / file 均为必填项 |
 | 400 | drawing_type 枚举值非法（允许值：design_drawing / dfm_report） |
 | 404 | 治具不存在 |
 
 ---
 
+### GET /api/drawings
+
+**说明**：查询治具的图纸/DFM 列表
+**Auth**：`@require_role: super_admin, design_engineer, pm, me, iqc`
+
+**查询参数**：`fixture_id` (int, 必填)
+
+**响应 200**
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": [
+    {
+      "id": 1,
+      "fixture_id": 10,
+      "version_code": "A1",
+      "drawing_type": "design_drawing",
+      "file_path": "drawings/2026/05/xxx.pdf",
+      "acceptance_standard": null,
+      "bom_info": null,
+      "is_copied": false,
+      "source_drawing_id": null,
+      "uploaded_by": 3,
+      "confirmed_by": null,
+      "confirmed_at": null,
+      "created_at": "2026-05-17T09:00:00+08:00"
+    }
+  ]
+}
+```
+
+---
+
+### PATCH /api/drawings/:id/confirm
+
+**说明**：PM 确认图纸（仅写 confirmed_by / confirmed_at，不改其他字段）
+**Auth**：`@require_role: super_admin, pm`
+
+**请求体**：无（由 JWT identity 自动取 confirmed_by）
+
+**响应 200**
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "confirmed_by": 2,
+    "confirmed_at": "2026-05-17T10:00:00+08:00"
+  }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 404 | 图纸记录不存在 |
+| 409 | 图纸已被确认 |
+
+---
+
 ### POST /api/purchase-requisitions
 
-**说明**：设计工程师提交采购申请单
+**说明**：设计工程师或 PM 提交采购申请单（需求侧），供应商由采购部门在 PO 阶段选定。
 **Auth**：`@require_role: super_admin, design_engineer, pm`
 
 **请求体字段**
@@ -904,10 +976,10 @@
 | 字段 | 类型 | 必填 | 约束 |
 |------|------|------|------|
 | `fixture_id` | int | 是 | 关联治具 ID |
-| `supplier_id` | int | 是 | 目标供应商 ID |
-| `estimated_amount` | decimal | 否 | 预估金额（元） |
-| `required_delivery_date` | string | 是 | ISO 8601 日期 |
-| `remark` | string | 否 | |
+| `drawing_id` | int | 否 | 关联图纸 ID（选填） |
+| `quantity` | int | 是 | 申请数量，≥ 1 |
+| `spec_note` | string | 否 | 规格说明 / 技术要求 |
+| `required_date` | string | 否 | 要求到货日期（ISO 8601 日期） |
 
 **响应 201**
 ```json
@@ -917,10 +989,15 @@
   "data": {
     "id": 1,
     "fixture_id": 10,
-    "supplier_id": 2,
-    "estimated_amount": "1200.00",
-    "required_delivery_date": "2026-06-15",
+    "requisition_no": "PR-20260517-0001",
+    "drawing_id": null,
+    "quantity": 2,
+    "spec_note": null,
+    "required_date": "2026-06-15",
+    "confirm_status": "pending",
     "created_by": 3,
+    "confirmed_by": null,
+    "confirmed_at": null,
     "created_at": "2026-05-17T09:00:00+08:00"
   }
 }
@@ -930,8 +1007,72 @@
 
 | HTTP | message |
 |------|---------|
-| 400 | fixture_id / supplier_id / required_delivery_date 均为必填项 |
-| 404 | 治具不存在 / 供应商不存在 |
+| 400 | fixture_id / quantity 均为必填项 |
+| 400 | quantity 须 ≥ 1 |
+| 404 | 治具不存在 / 图纸不存在 |
+
+---
+
+### GET /api/purchase-requisitions
+
+**说明**：查询治具的采购申请单列表
+**Auth**：`@require_role: super_admin, design_engineer, pm, purchaser`
+
+**查询参数**：`fixture_id` (int, 必填)
+
+**响应 200**
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": [
+    {
+      "id": 1,
+      "fixture_id": 10,
+      "requisition_no": "PR-20260517-0001",
+      "drawing_id": null,
+      "quantity": 2,
+      "spec_note": null,
+      "required_date": "2026-06-15",
+      "confirm_status": "pending",
+      "created_by": 3,
+      "confirmed_by": null,
+      "confirmed_at": null,
+      "created_at": "2026-05-17T09:00:00+08:00"
+    }
+  ]
+}
+```
+
+---
+
+### PATCH /api/purchase-requisitions/:id/confirm
+
+**说明**：PM 确认采购申请单（写 confirm_status='confirmed' + confirmed_by/at）
+**Auth**：`@require_role: super_admin, pm`
+
+**请求体**：无
+
+**响应 200**
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "confirm_status": "confirmed",
+    "confirmed_by": 2,
+    "confirmed_at": "2026-05-17T10:00:00+08:00"
+  }
+}
+```
+
+**错误响应**
+
+| HTTP | message |
+|------|---------|
+| 404 | 采购申请单不存在 |
+| 409 | 申请单已被确认 |
 
 ---
 

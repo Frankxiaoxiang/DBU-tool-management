@@ -4,7 +4,7 @@ from datetime import datetime
 
 from flask import current_app
 
-from exceptions import ValidationError
+from app.exceptions import ValidationError
 
 ALLOWED_EXTENSIONS = {'pdf', 'jpg', 'jpeg', 'png', 'xlsx', 'xls', 'docx', 'doc', 'zip'}
 MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024  # 50 MB
